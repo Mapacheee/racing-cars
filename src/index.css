@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+
+@theme {
+    --color-primary: #1b3c53;
+    --color-secondary: #456882;
+    --color-accent: #d2c1b6;
+    --color-background: #f9f3ef;
+    --color-warning: #b8860b;
+    --color-error: #8b4513;
+    --color-info: #2f4f4f;
+}
+
+:root {
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: light dark;
+    background-color: var(--color-background);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    place-items: center;
+    min-width: 320px;
+    min-height: 100vh;
+}
+
+#root {
+    max-width: 100vw;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* Custom game-specific utilities */
+@layer utilities {
+    .no-select {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    .no-drag {
+        -webkit-user-drag: none;
+        -khtml-user-drag: none;
+        -moz-user-drag: none;
+        -o-user-drag: none;
+    }
+}
