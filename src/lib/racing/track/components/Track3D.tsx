@@ -19,7 +19,7 @@ function TrackPieceComponent({
     enablePhysics?: boolean
 }): JSX.Element {
     if (piece.model === 'road_segment') {
-        const roadMesh = (
+        return (
             <mesh position={piece.position} rotation={piece.rotation}>
                 <boxGeometry
                     args={[
@@ -30,21 +30,6 @@ function TrackPieceComponent({
                 />
                 <meshStandardMaterial color="#444444" />
             </mesh>
-        )
-
-        return enablePhysics ? (
-            <RigidBody
-                type="fixed"
-                colliders="cuboid"
-                restitution={0}
-                friction={4.0} // Reduced from 3.0 to 0.7 for better car movement
-                collisionGroups={interactionGroups(2, [1])} // track in group 2, collides with cars (group 1)
-                solverGroups={interactionGroups(2, [1])} // physics interaction groups
-            >
-                {roadMesh}
-            </RigidBody>
-        ) : (
-            roadMesh
         )
     }
 
