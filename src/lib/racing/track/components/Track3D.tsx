@@ -16,8 +16,13 @@ function TrackPieceComponent({
     piece: TrackPiece
     enablePhysics?: boolean
 }): JSX.Element {
+    const adjustedPosition: [number, number, number] = [
+        piece.position[0],
+        ROAD_GEOMETRY.height - 1.12, 
+        piece.position[2],
+    ]
     return (
-        <mesh position={piece.position} rotation={piece.rotation}>
+        <mesh position={adjustedPosition} rotation={piece.rotation}>
             <boxGeometry
                 args={[
                     ROAD_GEOMETRY.width,
