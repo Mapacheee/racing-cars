@@ -2,6 +2,7 @@ import type { Track } from '../../../../lib/racing/track'
 import type { AICar } from '../types/car'
 import { GenomeBuilder, DEFAULT_NEAT_CONFIG } from '../ai'
 import { TRACKS } from '../../../../lib/racing/track'
+import { generateBaseCars } from '../../../../lib/racing/cars/systems/SpawnSystem'
 
 export interface SpawnConfig {
     trackId: string
@@ -45,42 +46,26 @@ export function generateAICars(config: {
     generation: number
     genomes?: any[] // Genomas evolucionados opcionales
 }): AICar[] {
-    // Use the actual track from config instead of hardcoded values
-    const track = TRACKS[config.trackId] || TRACKS['main_circuit']
-    const { position, rotation } = calculateSpawnTransform(track)
-
-    const cars: AICar[] = []
-
-    for (let i = 0; i < config.carCount; i++) {
-        // All cars spawn at the exact same position (they are ghosts to each other)
-        // Position is at the first waypoint which serves as the race start line
-        const car: AICar = {
-            id: `ai-${i + 1}`,
-            position: [
-                position[0], // Exact X position of first waypoint (start line)
-                position[1], // Same height
-                position[2], // Exact Z position of first waypoint (start line)
-            ],
-            rotation, // Facing towards second waypoint for correct start direction
-            color: config.colors[i % config.colors.length] || 'blue',
-            trackId: config.trackId,
-        }
-
-        // Usar genoma evolucionado si está disponible, sino crear uno nuevo
+    const track = TRACKS[config.trackId] || TRACKS['main_circuit'];
+    // Forzar formación 'single' para que todos los autos IA spawneen en el mismo lugar
+    const singleConfig = { ...config, formation: 'single' as const };
+    const baseCars = generateBaseCars(singleConfig, track);
+    return baseCars.map((baseCar: any, i: number) => {
+        const aiCar: AICar = {
+            ...baseCar,
+        };
+        // Asignar genoma si corresponde
         if (config.useNEAT) {
             if (config.genomes && config.genomes[i]) {
-                car.genome = config.genomes[i]
+                aiCar.genome = config.genomes[i];
                 console.log(
-                    `🧬 Car ${car.id} using evolved genome from generation ${config.generation}`
-                )
+                    `🧬 Car ${aiCar.id} using evolved genome from generation ${config.generation}`
+                );
             } else {
-                car.genome = GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG)
-                console.log(`🆕 Car ${car.id} using new random genome`)
+                aiCar.genome = GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG);
+                console.log(`🆕 Car ${aiCar.id} using new random genome`);
             }
         }
-
-        cars.push(car)
-    }
-
-    return cars
+        return aiCar;
+    });
 }

@@ -151,6 +151,11 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
 
         if (!visible) return null
 
+        const isAICar = 'genome' in car;
+        const carCollisionGroups = isAICar
+            ? interactionGroups(COLLISION_GROUPS.cars, [COLLISION_GROUPS.walls, COLLISION_GROUPS.track])
+            : interactionGroups(COLLISION_GROUPS.cars, [COLLISION_GROUPS.cars, COLLISION_GROUPS.walls, COLLISION_GROUPS.track]);
+        const carSolverGroups = carCollisionGroups;
         return (
             <RigidBody
                 ref={setRigidBodyRef}
@@ -169,14 +174,8 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
                 enabledRotations={[false, true, false]}
                 ccd={true}
                 gravityScale={1.0}
-                collisionGroups={interactionGroups(COLLISION_GROUPS.cars, [
-                    COLLISION_GROUPS.walls,
-                    COLLISION_GROUPS.track,
-                ])}
-                solverGroups={interactionGroups(COLLISION_GROUPS.cars, [
-                    COLLISION_GROUPS.walls,
-                    COLLISION_GROUPS.track,
-                ])}
+                collisionGroups={carCollisionGroups}
+                solverGroups={carSolverGroups}
                 userData={{ type: 'car', id: car.id }}
                 {...(onCollision && { onCollisionEnter: onCollision })}
             >
