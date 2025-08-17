@@ -144,6 +144,13 @@ export default function AICar({
                             }
                         }
                         controller.applyActions(actions, rb);
+                    let steering = 0;
+                    if ('steerRight' in actions && 'steerLeft' in actions) {
+                        steering = actions.steerRight - actions.steerLeft;
+                    } else if ('steering' in actions) {
+                        steering = actions.steering;
+                    }
+                    fitnessTracker.recordSteering(steering);
                     // Actualizar fitness
                     const currentPosition = new Vector3(position.x, position.y, position.z);
                     const currentVelocity = new Vector3(velocity.x, velocity.y, velocity.z);

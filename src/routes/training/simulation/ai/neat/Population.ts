@@ -113,48 +113,36 @@ export class Population {
     }
     
     private createNextGeneration(): void {
-        const newGenomes: Genome[] = []
-        
-        // Calcular total de fitness ajustado
-        const totalAdjustedFitness = this.genomes.reduce(
-            (sum, genome) => sum + genome.adjustedFitness, 0
-        )
-        
-        // Élite: mantener los mejores genomas
-        const elite = this.getBestGenomes(this.config.survival.eliteSize)
-        elite.forEach(genome => {
-            newGenomes.push(GenomeBuilder.copy(genome))
-        })
-        
-        // Llenar el resto de la población con más diversidad genética
-        while (newGenomes.length < this.config.populationSize) {
-            // Selección por torneo o proporcional al fitness
-            const parent1 = this.selectParent(totalAdjustedFitness)
-            
-            let offspring: Genome
-            
-            if (Math.random() < 0.2) {  
-                offspring = GenomeBuilder.createMinimal(this.config)
-            } else if (Math.random() < 0.6) {  
-                const parent2 = this.selectParent(totalAdjustedFitness)
-                offspring = GenomeBuilder.crossover(parent1, parent2)
-            } else {
-                offspring = GenomeBuilder.copy(parent1)
-            }
-            
-            // Mutación adaptativa basada en la generación actual (solo si no es aleatorio)
-            if (Math.random() >= 0.2) {  // No mutar los completamente aleatorios
-                const adaptiveConfig = { ...this.config, mutationRates: getAdaptiveMutationRates(this.generation) }
-                Mutations.mutate(offspring, adaptiveConfig)
-            }
-            
-            newGenomes.push(offspring)
+        const newGenomes: Genome[] = [];
+
+        // Mejor genoma de la generación actual
+        const bestGenome = this.getBestGenomes(1)[0];
+
+        // Copias directas del mejor genoma (élite)
+        const eliteCopies = Math.max(2, Math.floor(this.config.populationSize * 0.2));
+        for (let i = 0; i < eliteCopies; i++) {
+            newGenomes.push(GenomeBuilder.copy(bestGenome));
         }
-        
-        this.genomes = newGenomes
+
+        // Mutaciones del mejor genoma
+        const mutationCopies = Math.floor(this.config.populationSize * 0.7);
+        for (let i = 0; i < mutationCopies; i++) {
+            const mutated = GenomeBuilder.copy(bestGenome);
+            const adaptiveConfig = { ...this.config, mutationRates: getAdaptiveMutationRates(this.generation) };
+            Mutations.mutate(mutated, adaptiveConfig);
+            newGenomes.push(mutated);
+        }
+
+        // Resto: diversidad genética (aleatorios)
+        while (newGenomes.length < this.config.populationSize) {
+            const randomGenome = GenomeBuilder.createMinimal(this.config);
+            newGenomes.push(randomGenome);
+        }
+
+        this.genomes = newGenomes;
     }
     
-    private selectParent(totalFitness: number): Genome {
+    /*private selectParent(totalFitness: number): Genome {
         // Selección por ruleta
         let randomValue = Math.random() * totalFitness
         
@@ -167,7 +155,7 @@ export class Population {
         
         // Fallback: devolver genoma aleatorio
         return this.genomes[Math.floor(Math.random() * this.genomes.length)]
-    }
+    }*/
     
     private getBestGenomes(count: number): Genome[] {
         return [...this.genomes]
