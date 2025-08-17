@@ -19,6 +19,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
     const navigate = useNavigate()
     const [showRestartModal, setShowRestartModal] = useState(false)
     const [showStopModal, setShowStopModal] = useState(false)
+    const [fps, setFps] = useState(0)
 
     if (!neatContext) {
         return (
@@ -50,6 +51,38 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     useEffect(() => {
         document.title = 'Entrenamiento de la ia - Carrera neuronal 🏎️🧠'
+    }, [])
+
+    // FPS tracking
+    useEffect(() => {
+        let lastTime = performance.now()
+        let frameCount = 0
+        let fpsInterval: number
+
+        const updateFPS = () => {
+            frameCount++
+            const currentTime = performance.now()
+
+            if (currentTime - lastTime >= 1000) {
+                // Update every second
+                const currentFPS = Math.round(
+                    (frameCount * 1000) / (currentTime - lastTime)
+                )
+                setFps(currentFPS)
+                frameCount = 0
+                lastTime = currentTime
+            }
+
+            fpsInterval = requestAnimationFrame(updateFPS)
+        }
+
+        fpsInterval = requestAnimationFrame(updateFPS)
+
+        return () => {
+            if (fpsInterval) {
+                cancelAnimationFrame(fpsInterval)
+            }
+        }
     }, [])
 
     const handleBackToMenu = () => {
@@ -91,6 +124,11 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const handleStopCancel = () => {
         setShowStopModal(false)
+    }
+    const getFpsColor = (fps: number) => {
+        if (fps < 30) return 'text-red-400'
+        if (fps < 50) return 'text-yellow-600'
+        return 'text-green-500'
     }
 
     return (
@@ -275,7 +313,8 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     </div>
                     <div className="text-xs text-gray-500 mb-2">
                         {track.waypoints.length} Puntos •{' '}
-                        {Math.round(track.length)}m
+                        {Math.round(track.length)}m •{' '}
+                        <span className={getFpsColor(fps)}>{fps}</span> FPS
                     </div>
                     <button
                         onClick={handleGenerateNewTrack}
