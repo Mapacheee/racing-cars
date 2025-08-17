@@ -63,7 +63,7 @@ export default function AICar({
     const [controller] = useState(() => {
         const genome =
             carData.genome || GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG)
-        return new NEATCarController(genome, carData.id) // Pass car ID for debug control
+        return new NEATCarController(genome, carData.id) 
     })
 
 
@@ -87,16 +87,18 @@ export default function AICar({
         }
     }, [generation, carData.position, carData.rotation, fitnessTracker])
 
-    const SENSOR_CENTER_OFFSET = { x: -21.2, y: -2.5, z: -4.4 }
+    const SENSOR_CENTER_OFFSET = { x: -21.2, y: 0, z: -4.4 }
 
     useEffect(() => {
-        if (isEliminated || !isTraining) return
-
         let frame = 0
         function updateSimulation() {
             const car = carRef.current
+            if (isEliminated && car?.rigidBody) {
+                car.rigidBody.setLinvel({ x: 0, y: 0, z: 0 });
+                car.rigidBody.setAngvel({ x: 0, y: 0, z: 0 });
+                return; 
+            }
             if (car?.rigidBody && track && isTraining) {
-
                 const rb = car.rigidBody
                 const position = rb.translation()
                 const rotation = rb.rotation()
@@ -259,6 +261,8 @@ export default function AICar({
                 restitution: 0.1,
                 angularDamping: CAR_PHYSICS_CONFIG.angularDamping,
                 linearDamping: CAR_PHYSICS_CONFIG.linearDamping,
+                collisionFilterGroup: 0,
+                collisionFilterMask: 0,
             }}
         >
             <SensorVisualization

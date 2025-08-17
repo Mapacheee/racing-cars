@@ -156,6 +156,13 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
             ? interactionGroups(COLLISION_GROUPS.cars, [COLLISION_GROUPS.walls, COLLISION_GROUPS.track])
             : interactionGroups(COLLISION_GROUPS.cars, [COLLISION_GROUPS.cars, COLLISION_GROUPS.walls, COLLISION_GROUPS.track]);
         const carSolverGroups = carCollisionGroups;
+        const extraPhysicsProps: any = {};
+        if (typeof finalPhysics.collisionFilterGroup === 'number') {
+            extraPhysicsProps.collisionFilterGroup = finalPhysics.collisionFilterGroup;
+        }
+        if (typeof finalPhysics.collisionFilterMask === 'number') {
+            extraPhysicsProps.collisionFilterMask = finalPhysics.collisionFilterMask;
+        }
         return (
             <RigidBody
                 ref={setRigidBodyRef}
@@ -177,6 +184,7 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
                 collisionGroups={carCollisionGroups}
                 solverGroups={carSolverGroups}
                 userData={{ type: 'car', id: car.id }}
+                {...extraPhysicsProps}
                 {...(onCollision && { onCollisionEnter: onCollision })}
             >
                 <primitive

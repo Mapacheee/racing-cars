@@ -20,7 +20,7 @@ export function calculateSpawnTransform(track: Track): {
 
     const position: [number, number, number] = [
         firstWaypoint.x + 0.5,
-        0,
+        -0.5,
         firstWaypoint.z - 1,
     ]
 

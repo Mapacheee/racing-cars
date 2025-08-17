@@ -20,6 +20,8 @@ export interface CarPhysicsConfig {
     mass?: number
     friction?: number
     restitution?: number
+    collisionFilterGroup?: number
+    collisionFilterMask?: number
 }
 
 export interface CarCollisionGroups {
