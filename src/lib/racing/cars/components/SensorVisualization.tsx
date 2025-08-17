@@ -14,7 +14,7 @@ interface SensorVisualizationProps {
 
 // default visualization configuration
 const DEFAULT_VISUAL_CONFIG: SensorVisualizationConfig = {
-    centerOffset: { x: -1, y: 0.2, z: 0 }, 
+    centerOffset: { x: -19.5, y: 0.8, z: -4.38}, 
     colors: {
         noObstacle: '#00ff00',
         obstacle: '#ff0000'

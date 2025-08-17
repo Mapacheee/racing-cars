@@ -204,8 +204,8 @@ export default function AICar({
                 carPosition={realTimeCarData.position}
                 carRotation={realTimeCarData.heading}
                 sensorReadings={currentSensorReadings}
-                config={DEFAULT_SENSOR_CONFIG}
-                visualConfig={{ centerOffset: { x: -21.2, y: 0, z: -4.4 } }}
+                config={DEFAULT_SENSOR_CONFIG}  
+                visualConfig={{ centerOffset: { x: -19.5, y: 0.8, z: -4.38 } }}
                 showCollisions={showCollisions}
                 visible={true}
             />

@@ -6,11 +6,11 @@ import type {
 
 // default car physics configuration for realistic car behavior
 export const DEFAULT_CAR_PHYSICS: CarPhysicsConfig = {
-    angularDamping: 2.0, // Reduced damping for more responsive movement
-    linearDamping: 0.08, // Reduced linear damping for easier movement
-    spawnHeight: 0.8, // Slightly higher spawn to ensure clear landing
-    mass: 0.8, // Slightly lighter for easier acceleration
-    friction: 0.3, // Low friction to prevent sticking
+    angularDamping: 2.0,
+    linearDamping: 0.08,
+    spawnHeight: 0.8,
+    mass: 0.8,
+    friction: 0.3,
     restitution: 0.1,
 }
 
@@ -22,11 +22,11 @@ export const COLLISION_GROUPS: CarCollisionGroups = {
 }
 
 // gravity configuration for car physics
-export const GRAVITY = [0, -3, 0] as const // softer gravity for controlled falling
+export const GRAVITY = [0, -9.81, 0] as const
 
 // default sensor configuration for obstacle detection
 export const DEFAULT_SENSOR_CONFIG: SensorConfig = {
-    maxDistance: 5,
+    maxDistance: 4.5,
     angles: {
         left: -45,
         leftCenter: -22.5,
