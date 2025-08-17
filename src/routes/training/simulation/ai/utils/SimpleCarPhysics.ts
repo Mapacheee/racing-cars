@@ -16,11 +16,15 @@ export interface CarControls {
 
 export class SimpleCarPhysics {
     // Physics constants - tuned for fun arcade feel
-    private static readonly MAX_SPEED = 30.0
-    private static readonly ACCELERATION = 10.0
-    private static readonly DECELERATION = 12.0
+    private static readonly MAX_SPEED = 10.0
+    private static readonly ACCELERATION = 5.0
+    private static readonly DECELERATION = 4.0
     private static readonly TURN_SPEED = 5.0
     private static readonly MIN_TURN_SPEED = 1.0
+
+    static getMaxSpeed(): number {
+        return SimpleCarPhysics.MAX_SPEED
+    }
 
     /**
      * Apply simple car physics to a rigid body

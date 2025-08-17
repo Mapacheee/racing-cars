@@ -1,10 +1,24 @@
 import type { NEATConfig } from '../../types/neat'
 
+export const NEAT_INPUT_NODES = [
+    'sensor_left',
+    'sensor_leftCenter',
+    'sensor_center',
+    'sensor_rightCenter',
+    'sensor_right',
+    'speed_normalized', // velocidad actual normalizada
+];
+
+export const NEAT_OUTPUT_NODES = [
+    'acceleration',      // 0-1, solo avanzar
+    'turn_right',        // 0-1, giro derecha
+    'turn_left',         // 0-1, giro izquierda
+];
+
 export const DEFAULT_NEAT_CONFIG: NEATConfig = {
     populationSize: 20,       // numero de autillos
-    inputNodes: 5,           
-    outputNodes: 2,        
-    
+    inputNodes: 6,           
+    outputNodes: 3,        
     mutationRates: {
         addNode: 0.03,           
         addConnection: 0.08,    

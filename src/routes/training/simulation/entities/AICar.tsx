@@ -122,18 +122,29 @@ export default function AICar({
                         DEFAULT_SENSOR_CONFIG
                     );
                     fitnessTracker.updateSensorFitness(readings);
-                    // Acciones IA
-                    let actions = controller.getControlActions(readings);
-                    if (fitnessTracker.getFitnessMetrics().timeAlive < 2) {
-                        actions.throttle = 1;
-                        actions.steering = 0;
-                    }
-                    const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-                    if (speed < 0.5) {
-                        actions.throttle = 1;
-                        actions.steering = 0;
-                    }
-                    controller.applyActions(actions, rb);
+                        // Acciones IA
+                        const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+                        let actions = controller.getControlActions(readings, speed);
+                        // Forzar aceleración y giro neutro al inicio o si está lento
+                        if (fitnessTracker.getFitnessMetrics().timeAlive < 2) {
+                            actions.acceleration = 1;
+                            if ('steerRight' in actions && 'steerLeft' in actions) {
+                                actions.steerRight = 0;
+                                actions.steerLeft = 0;
+                            } else {
+                                actions.steering = 0;
+                            }
+                        }
+                        if (speed < 0.5) {
+                            actions.acceleration = 1;
+                            if ('steerRight' in actions && 'steerLeft' in actions) {
+                                actions.steerRight = 0;
+                                actions.steerLeft = 0;
+                            } else {
+                                actions.steering = 0;
+                            }
+                        }
+                        controller.applyActions(actions, rb);
                     // Actualizar fitness
                     const currentPosition = new Vector3(position.x, position.y, position.z);
                     const currentVelocity = new Vector3(velocity.x, velocity.y, velocity.z);

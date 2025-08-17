@@ -1,5 +1,4 @@
-import type { Genome, NodeGene, Gene, NetworkOutput } from '../../types/neat'
-import type { SensorReading } from '../../types/sensors'
+import type { Genome, NodeGene, Gene } from '../../types/neat'
 
 export class Network {
     private nodes: Map<number, NodeGene>
@@ -17,39 +16,21 @@ export class Network {
         })
     }
     
-    // Procesar inputs del sensor y obtener outputs de control
-    activate(sensorInputs: SensorReading): NetworkOutput {
-        // Limpiar valores anteriores
-        this.nodeValues.clear()
-        
-        // Establecer valores de entrada (input nodes: 0-4)
-        const inputs = [
-            sensorInputs.left,
-            sensorInputs.leftCenter, 
-            sensorInputs.center,
-            sensorInputs.rightCenter,
-            sensorInputs.right
-        ]
-        
+    // Procesar inputs y obtener outputs como array
+    activate(inputs: number[]): number[] {
+        this.nodeValues.clear();
+        // Establecer valores de entrada (input nodes: 0-5)
         inputs.forEach((value, index) => {
-            this.nodeValues.set(index, value)
-        })
-        
+            this.nodeValues.set(index, value);
+        });
         // Propagar hacia adelante a través de la red
-        this.forwardPropagate()
-        
+        this.forwardPropagate();
         // Obtener outputs (output nodes son los últimos)
         const outputNodes = Array.from(this.nodes.values())
             .filter(node => node.type === 'output')
-            .sort((a, b) => a.id - b.id)
-        
-        const throttle = this.nodeValues.get(outputNodes[0]?.id) || 0
-        const steering = this.nodeValues.get(outputNodes[1]?.id) || 0
-        
-        return {
-            throttle: this.tanh(throttle),    // Activación tanh para throttle
-            steering: this.tanh(steering)     // Activación tanh para steering
-        }
+            .sort((a, b) => a.id - b.id);
+        // Retornar array de outputs (aceleración, giro derecha, giro izquierda)
+        return outputNodes.map(node => this.sigmoid(this.nodeValues.get(node.id) || 0));
     }
     
     private forwardPropagate(): void {
