@@ -29,6 +29,7 @@ export default function TrackWalls({
                     <mesh
                         position={[centerX, 0.25, centerZ]}
                         rotation={[0, rotation, 0]}
+                        userData={{ type: 'wall', side: wall.side }}
                     >
                         <boxGeometry args={[0.5, 3, length]} />
                         <meshBasicMaterial

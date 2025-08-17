@@ -131,29 +131,6 @@ export class SimpleCarPhysics {
             z: forward.z * targetSpeed + right.z * sidewaysSpeed * 0.1,
         }
 
-        // Debug: Check if rigid body methods exist
-        if (Math.random() < 0.05) {
-            console.log('🔧 Physics Debug - Rigid Body Check:', {
-                rigidBodyExists: !!rigidBody,
-                hasSetLinvel: !!(rigidBody && rigidBody.setLinvel),
-                hasSetAngvel: !!(rigidBody && rigidBody.setAngvel),
-                currentVel: rigidBody
-                    ? {
-                          x: velocity.x.toFixed(3),
-                          z: velocity.z.toFixed(3),
-                      }
-                    : 'no-rb',
-                newVel: {
-                    x: newVelocity.x.toFixed(3),
-                    z: newVelocity.z.toFixed(3),
-                },
-                forward: {
-                    x: forward.x.toFixed(3),
-                    z: forward.z.toFixed(3),
-                },
-                targetSpeed: targetSpeed.toFixed(3),
-            })
-        }
 
         // Apply to rigid body - Use force-based approach for better ground interaction
         try {
@@ -171,39 +148,8 @@ export class SimpleCarPhysics {
             // Still set angular velocity directly for responsive steering
             rigidBody.setAngvel({ x: 0, y: angularVelocity, z: 0 }, true)
 
-            // Verify the force was applied
-            if (Math.random() < 0.03) {
-                const afterVel = rigidBody.linvel()
-                console.log('🔧 Force Applied - Verification:', {
-                    forceApplied: {
-                        x: forceX.toFixed(3),
-                        z: forceZ.toFixed(3),
-                    },
-                    velocityBefore: {
-                        x: currentVel.x.toFixed(3),
-                        z: currentVel.z.toFixed(3),
-                    },
-                    velocityAfter: {
-                        x: afterVel.x.toFixed(3),
-                        z: afterVel.z.toFixed(3),
-                    },
-                    velocityChange: {
-                        x: (afterVel.x - currentVel.x).toFixed(3),
-                        z: (afterVel.z - currentVel.z).toFixed(3),
-                    },
-                })
-            }
         } catch (error) {
             console.error('🚨 Error applying physics to rigid body:', error)
-        } // Debug logging (very rare)
-        if (Math.random() < 0.002) {
-            console.log('🚗 Car Physics:', {
-                throttle: throttle.toFixed(2),
-                steering: steering.toFixed(2),
-                currentSpeed: currentSpeed.toFixed(2),
-                targetSpeed: targetSpeed.toFixed(2),
-                angularVel: angularVelocity.toFixed(2),
-            })
         }
     }
 

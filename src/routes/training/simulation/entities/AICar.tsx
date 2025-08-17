@@ -73,8 +73,7 @@ export default function AICar({
 
     // Handler de colisión física con muros
     const handleCollisionEnter = (event: any) => {
-        const other = event?.other || event?.colliderObject;
-        if (!isEliminated && isTraining && other?.userData?.type === 'wall') {
+        if (!isEliminated && isTraining) {
             if (onCarElimination) onCarElimination(carData.id);
             if (carRef.current?.rigidBody) {
                 carRef.current.rigidBody.setLinvel({ x: 0, y: 0, z: 0 });
