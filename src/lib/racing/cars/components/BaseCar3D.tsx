@@ -12,6 +12,7 @@ interface BaseCar3DProps {
     visible?: boolean
     children?: ReactNode
     onCollision?: (event: any) => void
+    onCollisionEnter?: (event: any) => void
 }
 
 export interface Car3DRef {
@@ -30,7 +31,7 @@ export interface Car3DRef {
 // basic 3D car component with physics and customizable appearance
 const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
     (
-        { car, physics = {}, modelPath, visible = true, children, onCollision },
+        { car, physics = {}, modelPath, visible = true, children, onCollision, onCollisionEnter },
         ref
     ) => {
         const rigidBodyRef = useRef<any>(null)
@@ -186,6 +187,7 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
                 userData={{ type: 'car', id: car.id }}
                 {...extraPhysicsProps}
                 {...(onCollision && { onCollisionEnter: onCollision })}
+                {...(typeof onCollisionEnter === 'function' && { onCollisionEnter })}
             >
                 <primitive
                     object={scene.clone()}

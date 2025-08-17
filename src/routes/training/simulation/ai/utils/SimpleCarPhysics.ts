@@ -16,11 +16,11 @@ export interface CarControls {
 
 export class SimpleCarPhysics {
     // Physics constants - tuned for fun arcade feel
-    private static readonly MAX_SPEED = 20.0
-    private static readonly ACCELERATION = 3.0
-    private static readonly DECELERATION = 8.0
-    private static readonly TURN_SPEED = 3.0
-    private static readonly MIN_TURN_SPEED = 2.0 // Minimum speed to turn effectively
+    private static readonly MAX_SPEED = 30.0
+    private static readonly ACCELERATION = 10.0
+    private static readonly DECELERATION = 12.0
+    private static readonly TURN_SPEED = 5.0
+    private static readonly MIN_TURN_SPEED = 1.0
 
     /**
      * Apply simple car physics to a rigid body
@@ -155,7 +155,7 @@ export class SimpleCarPhysics {
         try {
             // Apply force instead of directly setting velocity for better physics
             const currentVel = rigidBody.linvel()
-            const forceMagnitude = 5.0 // Force strength
+            const forceMagnitude = 25.0 // Force strength (aumentado para mayor respuesta)
 
             // Calculate force needed to reach target velocity
             const forceX = (newVelocity.x - currentVel.x) * forceMagnitude

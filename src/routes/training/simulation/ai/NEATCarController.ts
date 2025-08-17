@@ -18,15 +18,12 @@ export class NEATCarController {
         this.carId = carId || ''
     }
 
-    // Process sensors and get control actions - PURE AI LOGIC ONLY
     getControlActions(sensorReadings: SensorReading): NetworkOutput {
-        // Pure AI behavior - no manual control interference
         const actions = this.network.activate(sensorReadings)
 
         let throttle = actions.throttle
         let steering = actions.steering
 
-        // Clamp final values
         throttle = Math.max(-1, Math.min(1, throttle))
         steering = Math.max(-1, Math.min(1, steering))
 
@@ -36,16 +33,14 @@ export class NEATCarController {
         }
     }
 
-    // Apply simple car physics - same system as manual control
     applyActions(actions: NetworkOutput, rigidBody: any): void {
         if (!rigidBody) {
             console.warn('NEATCarController: No rigidBody provided')
             return
         }
 
-        // Short delay for physics stabilization
         const elapsedTime = Date.now() - this.startTime
-        if (elapsedTime < 100) {
+        if (elapsedTime < 100){
             this.isControlActive = false
             return
         }

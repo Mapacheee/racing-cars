@@ -1,9 +1,9 @@
 import type { CarPhysicsConfig, CarCollisionGroups } from '../types/car'
 
 export const CAR_PHYSICS_CONFIG: CarPhysicsConfig = {
-    angularDamping: 5.0, // Higher damping for stable arcade physics
-    linearDamping: 0.1, // Lower damping for responsive movement
-    spawnHeight: 0.6, // Just above track level (track height is 1.2)
+    angularDamping: 0.8,
+    linearDamping: 0.05,
+    spawnHeight: 0.6,
 }
 
 export const COLLISION_GROUPS: CarCollisionGroups = {

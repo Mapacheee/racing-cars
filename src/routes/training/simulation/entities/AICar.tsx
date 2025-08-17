@@ -1,7 +1,7 @@
-import { useRef, useEffect, useState } from 'react'
-import { Vector3 } from 'three'
-import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
-import { TRACKS } from '../../../../lib/racing/track'
+import { useRef, useEffect, useState } from 'react';
+import { Vector3 } from 'three';
+import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings';
+import { TRACKS } from '../../../../lib/racing/track';
 import {
     BaseCar3D,
     SensorVisualization,
@@ -10,26 +10,26 @@ import {
     CAR_MODELS,
     type Car3DRef,
     type AICar as AICarType,
-} from '../../../../lib/racing/cars'
+} from '../../../../lib/racing/cars';
 import {
     NEATCarController,
     CarFitnessTracker,
     GenomeBuilder,
-} from '../ai'
-import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig'
-import type { FitnessMetrics } from '../types/neat'
-import { useNEATTraining } from '../contexts/NEATTrainingContext'
-import { CAR_PHYSICS_CONFIG } from '../config/physics'
+} from '../ai';
+import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig';
+import type { FitnessMetrics } from '../types/neat';
+import { useNEATTraining } from '../contexts/NEATTrainingContext';
+import { CAR_PHYSICS_CONFIG } from '../config/physics';
 
 interface AICarProps {
-    carData: AICarType
+    carData: AICarType;
     onFitnessUpdate?: (
         carId: string,
         fitness: number,
         metrics: FitnessMetrics
-    ) => void
-    onCarElimination?: (carId: string) => void
-    isEliminated?: boolean
+    ) => void;
+    onCarElimination?: (carId: string) => void;
+    isEliminated?: boolean;
 }
 
 export default function AICar({
@@ -38,223 +38,157 @@ export default function AICar({
     onCarElimination,
     isEliminated,
 }: AICarProps) {
-    const carRef = useRef<Car3DRef>(null)
-    const { showCollisions } = useCanvasSettings()
-    const neatContext = useNEATTraining()
+    const carRef = useRef<Car3DRef>(null);
+    const { showCollisions } = useCanvasSettings();
+    const neatContext = useNEATTraining();
+    if (!neatContext) return null;
+    const { isTraining, generation } = neatContext;
 
-    if (!neatContext) {
-        return null
-    }
-
-    const { isTraining, generation } = neatContext
-    useEffect(() => {
-        if (!isTraining && carRef.current?.rigidBody) {
-            const rb = carRef.current.rigidBody;
-            rb.setLinvel({ x: 0, y: 0, z: 0 });
-            rb.setAngvel({ x: 0, y: 0, z: 0 });
-        }
-    }, [isTraining]);
+    // Estado local para posición y orientación
     const [carPosition, setCarPosition] = useState<Vector3>(
         new Vector3(...carData.position)
-    )
-    const [carHeading, setCarHeading] = useState<number>(carData.rotation || 0)
+    );
+    const [carHeading, setCarHeading] = useState<number>(carData.rotation || 0);
+    const [quietTime, setQuietTime] = useState(0);
 
-    const track = TRACKS[carData.trackId || 'circuito 1']
+    // Track y controlador IA
+    const track = TRACKS[carData.trackId || 'circuito 1'];
     const [controller] = useState(() => {
-        const genome =
-            carData.genome || GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG)
-        return new NEATCarController(genome, carData.id) 
-    })
-
-
+        const genome = carData.genome || GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG);
+        return new NEATCarController(genome, carData.id);
+    });
     const [fitnessTracker] = useState(() => {
-        const startPos = new Vector3(...carData.position)
-        return new CarFitnessTracker(carData.id, startPos, track.waypoints)
-    })
+        const startPos = new Vector3(...carData.position);
+        return new CarFitnessTracker(carData.id, startPos, track.waypoints);
+    });
 
-    const [lastCollisionTime, setLastCollisionTime] = useState(0)
-
+    // Reset de posición y fitness al cambiar generación o spawn
     useEffect(() => {
         if (carRef.current) {
-            carRef.current.resetPosition(carData.position, [
-                0,
-                carData.rotation || 0,
-                0,
-            ])
-
-            const startPos = new Vector3(...carData.position)
-            fitnessTracker.reset(startPos)
+            carRef.current.resetPosition(carData.position, [0, carData.rotation || 0, 0]);
+            const startPos = new Vector3(...carData.position);
+            fitnessTracker.reset(startPos);
         }
-    }, [generation, carData.position, carData.rotation, fitnessTracker])
+    }, [generation, carData.position, carData.rotation, fitnessTracker]);
 
-    const SENSOR_CENTER_OFFSET = { x: -21.2, y: 0, z: -4.4 }
+    // Handler de colisión física con muros
+    const handleCollisionEnter = (event: any) => {
+        const other = event?.other || event?.colliderObject;
+        if (!isEliminated && isTraining && other?.userData?.type === 'wall') {
+            if (onCarElimination) onCarElimination(carData.id);
+            if (carRef.current?.rigidBody) {
+                carRef.current.rigidBody.setLinvel({ x: 0, y: 0, z: 0 });
+                carRef.current.rigidBody.setAngvel({ x: 0, y: 0, z: 0 });
+                carRef.current.rigidBody.resetForces(true);
+                carRef.current.rigidBody.resetTorques(true);
+            }
+        }
+    };
 
+    // Ciclo principal de simulación
     useEffect(() => {
-        let frame = 0
+        let frame = 0;
         function updateSimulation() {
-            const car = carRef.current
-            if (isEliminated && car?.rigidBody) {
-                car.rigidBody.setLinvel({ x: 0, y: 0, z: 0 });
-                car.rigidBody.setAngvel({ x: 0, y: 0, z: 0 });
-                return; 
-            }
-            if (car?.rigidBody && track && isTraining) {
-                const rb = car.rigidBody
-                const position = rb.translation()
-                const rotation = rb.rotation()
-                const velocity = rb.linvel()
-
-                const heading = Math.atan2(
-                    2 * (rotation.w * rotation.y + rotation.x * rotation.z),
-                    1 - 2 * (rotation.y * rotation.y + rotation.z * rotation.z)
-                )
-
-                const newCarPosition = new Vector3(
-                    position.x,
-                    position.y,
-                    position.z
-                )
-                setCarPosition(newCarPosition)
-                setCarHeading(heading)
-                const readings = createSensorReadings(
-                    newCarPosition,
-                    heading,
-                    track.walls,
-                    DEFAULT_SENSOR_CONFIG,
-                )
-                fitnessTracker.updateSensorFitness(readings)
-
-                const WALL_COLLISION_DISTANCE = 0.05
-                const sensorValues = [
-                    readings.left,
-                    readings.leftCenter,
-                    readings.center,
-                    readings.rightCenter,
-                    readings.right,
-                ]
-                const hasWallCollision = sensorValues.some(
-                    distance => distance < WALL_COLLISION_DISTANCE
-                )
-
-                if (hasWallCollision && !isEliminated) {
-                    if (onCarElimination) {
-                        onCarElimination(carData.id)
+            const car = carRef.current;
+            if (car?.rigidBody) {
+                // Detener si está eliminado o en pausa
+                if (!isTraining || isEliminated) {
+                    car.rigidBody.setLinvel({ x: 0, y: 0, z: 0 });
+                    car.rigidBody.setAngvel({ x: 0, y: 0, z: 0 });
+                    car.rigidBody.resetForces(true);
+                    car.rigidBody.resetTorques(true);
+                    setQuietTime(0);
+                    frame = requestAnimationFrame(updateSimulation);
+                    return;
+                }
+                // Simulación activa
+                if (track && isTraining && !isEliminated) {
+                    const rb = car.rigidBody;
+                    const position = rb.translation();
+                    const rotation = rb.rotation();
+                    const velocity = rb.linvel();
+                    const heading = Math.atan2(
+                        2 * (rotation.w * rotation.y + rotation.x * rotation.z),
+                        1 - 2 * (rotation.y * rotation.y + rotation.z * rotation.z)
+                    );
+                    const newCarPosition = new Vector3(position.x, position.y, position.z);
+                    setCarPosition(newCarPosition);
+                    setCarHeading(heading);
+                    // Sensores y fitness
+                    const readings = createSensorReadings(
+                        newCarPosition,
+                        heading,
+                        track.walls,
+                        DEFAULT_SENSOR_CONFIG
+                    );
+                    fitnessTracker.updateSensorFitness(readings);
+                    // Acciones IA
+                    let actions = controller.getControlActions(readings);
+                    if (fitnessTracker.getFitnessMetrics().timeAlive < 2) {
+                        actions.throttle = 1;
+                        actions.steering = 0;
                     }
-                    return 
-                }
-
-                let actions = controller.getControlActions(readings)
-
-                if (fitnessTracker.getFitnessMetrics().timeAlive < 2) {
-                    actions.throttle = 1
-                    actions.steering = 0
-                }
-                const speed = Math.sqrt(
-                    velocity.x * velocity.x + velocity.z * velocity.z
-                )
-                if (speed < 0.5) {
-                    actions.throttle = 1
-                    actions.steering = 0
-                }
-
-                controller.applyActions(actions, rb)                
-                const currentPosition = new Vector3(
-                    position.x,
-                    position.y,
-                    position.z
-                )
-                const currentVelocity = new Vector3(
-                    velocity.x,
-                    velocity.y,
-                    velocity.z
-                )
-                fitnessTracker.update(currentPosition, currentVelocity)
-                if (frame % 180 === 0 && onFitnessUpdate) {
-                    const metrics = fitnessTracker.getFitnessMetrics()
-                    const fitness = fitnessTracker.calculateFitness()
-                    onFitnessUpdate(carData.id, fitness, metrics)
+                    const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+                    if (speed < 0.5) {
+                        actions.throttle = 1;
+                        actions.steering = 0;
+                    }
+                    controller.applyActions(actions, rb);
+                    // Actualizar fitness
+                    const currentPosition = new Vector3(position.x, position.y, position.z);
+                    const currentVelocity = new Vector3(velocity.x, velocity.y, velocity.z);
+                    fitnessTracker.update(currentPosition, currentVelocity);
+                    // Eliminar si está quieto
+                    if (speed < 0.1) {
+                        setQuietTime(qt => {
+                            const newQt = qt + 1 / 60;
+                            if (newQt > 2 && onCarElimination) {
+                                onCarElimination(carData.id);
+                                rb.setLinvel({ x: 0, y: 0, z: 0 });
+                                rb.setAngvel({ x: 0, y: 0, z: 0 });
+                                rb.resetForces(true);
+                                rb.resetTorques(true);
+                            }
+                            return newQt;
+                        });
+                    } else {
+                        setQuietTime(0);
+                    }
+                    // Reporte de fitness
+                    if (frame % 180 === 0 && onFitnessUpdate) {
+                        const metrics = fitnessTracker.getFitnessMetrics();
+                        const fitness = fitnessTracker.calculateFitness();
+                        onFitnessUpdate(carData.id, fitness, metrics);
+                    }
                 }
             }
-            frame++
-            frame = requestAnimationFrame(updateSimulation)
+            frame++;
+            frame = requestAnimationFrame(updateSimulation);
         }
-        frame = requestAnimationFrame(updateSimulation)
-        return () => cancelAnimationFrame(frame)
-    }, [
-        track,
-        controller,
-        fitnessTracker,
-        carData.id,
-        onFitnessUpdate,
-        isEliminated,
-        isTraining,
-    ])
+        frame = requestAnimationFrame(updateSimulation);
+        return () => cancelAnimationFrame(frame);
+    }, [track, controller, fitnessTracker, carData.id, onFitnessUpdate, isEliminated, isTraining]);
 
-    const handleCollision = () => {
-        const now = Date.now()
-        if (now - lastCollisionTime > 100 && !isEliminated) {
-            if (isTraining && onCarElimination) {
-                fitnessTracker.recordCollision()
-                setLastCollisionTime(now)
-                onCarElimination(carData.id)
-            }
-        }
-    }
-
-    useEffect(() => {
-        if (isEliminated && carRef.current?.rigidBody) {
-            const rb = carRef.current.rigidBody;
-            rb.setLinvel({ x: 0, y: 0, z: 0 });
-            rb.setAngvel({ x: 0, y: 0, z: 0 });
-        }
-    }, [isEliminated]);
-
-    useEffect(() => {
-        return () => {
-            fitnessTracker.destroy()
-        }
-    }, [fitnessTracker])
-
-    const getRealTimeCarData = () => {
-        if (carRef.current?.rigidBody) {
-            const rb = carRef.current.rigidBody
-            const position = rb.translation()
-            const rotation = rb.rotation()
-
-            const heading = Math.atan2(
-                2 * (rotation.w * rotation.y + rotation.x * rotation.z),
-                1 - 2 * (rotation.y * rotation.y + rotation.z * rotation.z)
-            )
-
-            return {
-                position: new Vector3(position.x, position.y, position.z),
-                heading,
-            }
-        }
-
-        return {
-            position: carPosition,
-            heading: carHeading,
-        }
-    }
-
-    const realTimeCarData = getRealTimeCarData()
+    // Datos en tiempo real para renderizado y sensores
+    const realTimeCarData = {
+        position: carPosition,
+        heading: carHeading,
+    };
     const currentSensorReadings = createSensorReadings(
         realTimeCarData.position,
         realTimeCarData.heading,
         track.walls,
-        DEFAULT_SENSOR_CONFIG,
-    )
+        DEFAULT_SENSOR_CONFIG
+    );
+
+    // Renderizado del auto y sensores
     return (
         <BaseCar3D
             ref={carRef}
             car={carData}
             modelPath={
-                isEliminated && isTraining
-                    ? CAR_MODELS.eliminated
-                    : CAR_MODELS.default
+                isEliminated && isTraining ? CAR_MODELS.eliminated : CAR_MODELS.default
             }
-            onCollision={handleCollision}
             physics={{
                 mass: 1.0,
                 friction: 1.5,
@@ -264,17 +198,17 @@ export default function AICar({
                 collisionFilterGroup: 0,
                 collisionFilterMask: 0,
             }}
+            onCollisionEnter={handleCollisionEnter}
         >
             <SensorVisualization
                 carPosition={realTimeCarData.position}
                 carRotation={realTimeCarData.heading}
                 sensorReadings={currentSensorReadings}
                 config={DEFAULT_SENSOR_CONFIG}
-                visualConfig={{ centerOffset: SENSOR_CENTER_OFFSET }}
+                visualConfig={{ centerOffset: { x: -21.2, y: 0, z: -4.4 } }}
                 showCollisions={showCollisions}
                 visible={true}
             />
-
             {showCollisions && (
                 <mesh position={[-0.5, 0.2, -1]}>
                     <boxGeometry args={[1, 0.4, 2]} />
@@ -286,7 +220,6 @@ export default function AICar({
                     />
                 </mesh>
             )}
-
         </BaseCar3D>
-    )
+    );
 }
