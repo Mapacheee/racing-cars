@@ -1,5 +1,5 @@
 import { useGLTF } from '@react-three/drei'
-import { RigidBody, interactionGroups } from '@react-three/rapier'
+import { RigidBody, interactionGroups, CuboidCollider } from '@react-three/rapier'
 import { useRef, forwardRef, useImperativeHandle, useCallback, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import type { BaseCar, CarPhysicsConfig } from '../types'
@@ -176,8 +176,8 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
                 linearDamping={finalPhysics.linearDamping}
                 mass={finalPhysics.mass || 1.0}
                 friction={0.3}
-                restitution={finalPhysics.restitution || 0.1}
-                colliders="cuboid"
+                restitution={0.2}
+                colliders={false}
                 canSleep={false}
                 enabledRotations={[false, true, false]}
                 ccd={true}
@@ -189,6 +189,7 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
                 {...(onCollision && { onCollisionEnter: onCollision })}
                 {...(typeof onCollisionEnter === 'function' && { onCollisionEnter })}
             >
+                <CuboidCollider args={[0.1, 0.1, 0.3]} restitution={0.1} friction={0.3} />
                 <primitive
                     object={scene.clone()}
                     scale={1.5}

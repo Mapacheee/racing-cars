@@ -86,11 +86,11 @@ export default function TrackWalls({
                             />
                         </mesh>
                         <CuboidCollider
-                            position={[centerX, 0.25, centerZ]}
+                            position={[centerX, 0.5, centerZ]}
                             rotation={[0, rotation, 0]}
-                            args={[0.25, 1.5, length / 2]}
-                            restitution={0.1}
-                            friction={2.0}
+                            args={[0.4, 2.5, length / 2]}
+                            restitution={0.3}
+                            friction={2.5}
                         />
                     </React.Fragment>
                 );
