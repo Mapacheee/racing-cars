@@ -152,26 +152,25 @@ export class CarFitnessTracker {
             sensorReadings.rightCenter +
             sensorReadings.right;
 
-        // Bonus por sensores despejados
-        const sensorBonus = (sensorSum / 5) * 0.04;
-        this.sensorBonusAccumulator += sensorBonus;
+        (['left', 'leftCenter', 'center', 'rightCenter', 'right'] as (keyof SensorReading)[]).forEach(key => {
+            if (sensorReadings[key] > 0.7) {
+                this.sensorBonusAccumulator += 0.07;
+            }
+        });
 
-        // Bonus por mantener el sensor central despejado (seguir pista)
-        if (sensorReadings.center > 0.8) {
-            this.sensorBonusAccumulator += 0.08;
+        if (sensorReadings.center > 0.7) {
+            this.sensorBonusAccumulator += 0.12;
         }
 
-        // Penalización si los sensores laterales detectan muro
-        if (sensorReadings.left < 0.2) {
-            this.sensorBonusAccumulator -= 0.05;
+        if (sensorReadings.left < 0.3) {
+            this.sensorBonusAccumulator -= 0.08;
         }
-        if (sensorReadings.right < 0.2) {
-            this.sensorBonusAccumulator -= 0.05;
+        if (sensorReadings.right < 0.3) {
+            this.sensorBonusAccumulator -= 0.08;
         }
 
-        // Bonus por todos los sensores despejados
         if (sensorSum > 4.0) {
-            this.sensorBonusAccumulator += 0.02;
+            this.sensorBonusAccumulator += 0.03;
         }
     }
 

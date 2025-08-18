@@ -67,12 +67,12 @@ export function NEATTrainingProvider({ children, onReset }: NEATTrainingProvider
             {
                 mutation: methods.mutation.ALL,
                 popsize: 20,
-                mutationRate: 0.6, 
-                elitism: 3, 
+                mutationRate: 0.4, 
+                elitism: 1,
             }
         );
         neatRef.current.population.forEach((network: any) => {
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 50; i++) {
                 network.mutate(methods.mutation.ALL[Math.floor(Math.random() * methods.mutation.ALL.length)]);
             }
         });
