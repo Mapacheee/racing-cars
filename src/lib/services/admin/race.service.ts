@@ -1,87 +1,96 @@
+import axios from 'axios'
 import type { RaceFormData, Track, AIModel, Race } from '../../types/race'
 
 const API_URL = import.meta.env['VITE_API_URL']
 
+const client = axios.create({ baseURL: API_URL })
+
+function extractErrorMessage(error: any, fallback: string) {
+    if (!error || typeof error !== 'object') return fallback
+    if (error.response && error.response.data && error.response.data.message)
+        return error.response.data.message
+    if (error.message) return error.message
+    return fallback
+}
+
 export const AdminRaceService = {
     async getTracks(token: string): Promise<Track[]> {
-        const response = await fetch(`${API_URL}/tracks`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-        if (!response.ok) throw new Error('Error al cargar las pistas')
-        return response.json()
+        try {
+            const res = await client.get<Track[]>('/tracks', {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            return res.data
+        } catch (err) {
+            throw new Error(
+                extractErrorMessage(err, 'Error al cargar las pistas')
+            )
+        }
     },
 
     async getAIModels(token: string): Promise<AIModel[]> {
-        const response = await fetch(`${API_URL}/ai-models`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-        if (!response.ok) throw new Error('Error al cargar los modelos de IA')
-        return response.json()
+        try {
+            const res = await client.get<AIModel[]>('/ai-models', {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            return res.data
+        } catch (err) {
+            throw new Error(
+                extractErrorMessage(err, 'Error al cargar los modelos de IA')
+            )
+        }
     },
 
     async createRace(raceData: RaceFormData, token: string): Promise<Race> {
-        const response = await fetch(`${API_URL}/races`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(raceData),
-        })
-
-        if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.message || 'error al crear la carrera')
+        try {
+            const res = await client.post<Race>('/races', raceData, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            return res.data
+        } catch (err) {
+            throw new Error(
+                extractErrorMessage(err, 'error al crear la carrera')
+            )
         }
-
-        return response.json()
     },
 
     async getRaces(token: string): Promise<Race[]> {
-        const response = await fetch(`${API_URL}/races`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.message || 'error al cargar las carreras')
+        try {
+            const res = await client.get<Race[]>('/races', {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            return res.data
+        } catch (err) {
+            throw new Error(
+                extractErrorMessage(err, 'error al cargar las carreras')
+            )
         }
-
-        return response.json()
     },
 
     async getRace(id: string, token: string): Promise<Race> {
-        const response = await fetch(`${API_URL}/races/${id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.message || 'error al cargar la carrera')
+        try {
+            const res = await client.get<Race>(`/races/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            return res.data
+        } catch (err) {
+            throw new Error(
+                extractErrorMessage(err, 'error al cargar la carrera')
+            )
         }
-
-        return response.json()
     },
 
     async deleteRace(id: string, token: string): Promise<void> {
-        const response = await fetch(`${API_URL}/races/${id}`, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-
-        if (!response.ok) {
-            const error = await response.json()
-            throw new Error(error.message || 'error al borrar la carrera')
+        try {
+            await client.delete(`/races/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+        } catch (err) {
+            throw new Error(
+                extractErrorMessage(err, 'error al borrar la carrera')
+            )
         }
     },
 }

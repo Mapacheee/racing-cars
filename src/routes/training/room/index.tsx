@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../lib/contexts/AuthContext'
+import { usePlayerProfile } from '../../../lib/hooks/usePlayerProfile'
 import { usePlayerRoomContext } from '../../../lib/contexts/PlayerRoomContext'
 import type { PlayerAuth } from '../../../lib/types/auth'
 
@@ -36,7 +37,8 @@ function PlayerRoomGuard() {
 
 function PlayerRoomContent() {
     const navigate = useNavigate()
-    const { auth, clearAuth } = useAuth<PlayerAuth>()
+    const { clearAuth } = useAuth<PlayerAuth>()
+    const { username } = usePlayerProfile()
     const { currentRoom, participants, roomError, leaveRoom, isConnected } =
         usePlayerRoomContext()
 
@@ -127,7 +129,7 @@ function PlayerRoomContent() {
                                                     {participant.username}
                                                 </span>
                                                 {participant.username ===
-                                                    auth.username && (
+                                                    username && (
                                                     <span className="px-2 py-1 bg-accent text-secondary text-xs rounded-full font-medium">
                                                         Tú
                                                     </span>

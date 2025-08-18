@@ -2,9 +2,7 @@ import type { NetworkOutput } from '../types/neat'
 import { globalKeyboardInput } from './utils/KeyboardInput'
 import { SimpleCarPhysics, type CarControls } from './utils/SimpleCarPhysics'
 
-/**
- * Manual Car Controller - Simple WASD control system
- */
+// TODO: Remove all implementation of ManualCarController class
 export class ManualCarController {
     private carId: string
     private hasLoggedFirstInput: boolean = false
@@ -14,9 +12,6 @@ export class ManualCarController {
         console.log(`🎮 ManualCarController created for ${carId}`)
     }
 
-    /**
-     * Get manual control actions from keyboard input
-     */
     getControlActions(): NetworkOutput {
         // Only provide manual control if keyboard is active
         if (globalKeyboardInput.isActive()) {

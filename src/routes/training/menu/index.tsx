@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../lib/contexts/AuthContext'
+import { usePlayerProfile } from '../../../lib/hooks/usePlayerProfile'
 import { usePlayerRoomContext } from '../../../lib/contexts/PlayerRoomContext'
 import type { PlayerAuth } from '../../../lib/types/auth'
 import { useFormik } from 'formik'
@@ -7,7 +8,8 @@ import { useEffect } from 'react'
 
 export default function TrainingMenu() {
     const navigate = useNavigate()
-    const { auth, clearAuth } = useAuth<PlayerAuth>()
+    const { clearAuth } = useAuth<PlayerAuth>()
+    const { username, aiGeneration } = usePlayerProfile()
     const {
         isConnected,
         connectionError,
@@ -97,13 +99,13 @@ export default function TrainingMenu() {
                         Usuario
                     </div>
                     <div className="text-2xl font-bold text-primary">
-                        {auth.username}
+                        {username}
                     </div>
                     <div className="text-base text-secondary mt-4">
                         Generación de IA
                     </div>
                     <div className="text-lg font-semibold text-primary">
-                        Gen {auth.aiGeneration}
+                        Gen {aiGeneration}
                     </div>
                 </div>
                 {/* Actions Column */}
@@ -112,7 +114,7 @@ export default function TrainingMenu() {
                         to="/training/simulation"
                         className="w-full text-center rounded-md px-4 py-3 font-medium bg-primary text-white hover:bg-secondary hover:text-background transition-colors focus:outline-none focus:ring-2 focus:ring-secondary"
                     >
-                        {auth.aiGeneration === 1
+                        {aiGeneration === 1
                             ? 'Empezar Entrenamiento'
                             : 'Continuar Entrenamiento'}
                     </Link>

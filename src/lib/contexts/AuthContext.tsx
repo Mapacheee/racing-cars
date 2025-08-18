@@ -10,6 +10,7 @@ import type {
 } from '../types/auth'
 import { tryLoginPlayer } from '../services/player/auth.service'
 import { tryLoginAdmin } from '../services/admin/auth.service'
+import { tryFetchPlayerProfile } from '../services/player/profile.service'
 
 function clearAuthCookies(role: 'player' | 'admin' | 'both') {
     if (role === 'player') {
@@ -29,36 +30,67 @@ function setAuthCookies(data: User, role: 'player' | 'admin'): void {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [auth, setAuth] = useState<User | null>(() => {
-        const adminCookie = Cookies.get('admin')
-        if (adminCookie) {
-            try {
-                const adminData: User = JSON.parse(adminCookie)
-                return adminData
-            } catch {}
-        }
-
-        // Check for player in cookies
-        const playerCookie = Cookies.get('player')
-        if (playerCookie) {
-            try {
-                const playerData: User = JSON.parse(playerCookie)
-                return playerData
-            } catch {}
-        }
-
-        clearAuthCookies('both')
-        return null
-    })
-
-    const [role, setRole] = useState<'player' | 'admin' | null>(() => {
-        if (Cookies.get('admin')) return 'admin'
-        if (Cookies.get('player')) return 'player'
-        return null
-    })
-
-    const [isLoading, setIsLoading] = useState(false)
+    const [auth, setAuth] = useState<User | null>(null)
+    const [role, setRole] = useState<'player' | 'admin' | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string>('')
+
+    useState(() => {
+        const initializeAuth = async () => {
+            const adminCookie = Cookies.get('admin')
+            if (adminCookie) {
+                try {
+                    const adminData: User = JSON.parse(adminCookie)
+                    setAuth(adminData)
+                    setRole('admin')
+                    setIsLoading(false)
+                    return
+                } catch {
+                    clearAuthCookies('admin')
+                }
+            }
+
+            const playerCookie = Cookies.get('player')
+            if (playerCookie) {
+                try {
+                    const playerData: User = JSON.parse(playerCookie)
+
+                    if ('aiGeneration' in playerData && playerData.token) {
+                        try {
+                            const freshProfile = await tryFetchPlayerProfile(
+                                playerData.token,
+                                playerData.username
+                            )
+                            setAuth(freshProfile)
+                            setRole('player')
+                            setAuthCookies(freshProfile, 'player')
+                        } catch (error) {
+                            // console.warn(
+                            //     'Failed to fetch fresh profile, using cookie data:',
+                            //     error
+                            // )
+                            setAuth(playerData)
+                            setRole('player')
+                        }
+                    } else {
+                        setAuth(playerData)
+                        setRole('player')
+                    }
+                    setIsLoading(false)
+                    return
+                } catch {
+                    clearAuthCookies('player')
+                }
+            }
+
+            clearAuthCookies('both')
+            setAuth(null)
+            setRole(null)
+            setIsLoading(false)
+        }
+
+        initializeAuth()
+    })
 
     const setPlayer = async ({
         username,
@@ -69,9 +101,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setError('')
 
             const player = await tryLoginPlayer({ username, password })
-            setAuth(player)
-            setRole('player')
-            setAuthCookies(player, 'player')
+
+            try {
+                const freshProfile = await tryFetchPlayerProfile(
+                    player.token,
+                    player.username
+                )
+                setAuth(freshProfile)
+                setRole('player')
+                setAuthCookies(freshProfile, 'player')
+            } catch (profileError) {
+                console.warn(
+                    'Failed to fetch fresh profile, using login data:',
+                    profileError
+                )
+                setAuth(player)
+                setRole('player')
+                setAuthCookies(player, 'player')
+            }
         } catch (error) {
             const errorMessage =
                 error instanceof Error

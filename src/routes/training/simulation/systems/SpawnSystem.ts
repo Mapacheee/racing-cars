@@ -46,26 +46,26 @@ export function generateAICars(config: {
     generation: number
     genomes?: any[] // Genomas evolucionados opcionales
 }): AICar[] {
-    const track = TRACKS[config.trackId] || TRACKS['main_circuit'];
+    const track = TRACKS[config.trackId] || TRACKS['main_circuit']
     // Forzar formación 'single' para que todos los autos IA spawneen en el mismo lugar
-    const singleConfig = { ...config, formation: 'single' as const };
-    const baseCars = generateBaseCars(singleConfig, track);
+    const singleConfig = { ...config, formation: 'single' as const }
+    const baseCars = generateBaseCars(singleConfig, track)
     return baseCars.map((baseCar: any, i: number) => {
         const aiCar: AICar = {
             ...baseCar,
-        };
+        }
         // Asignar genoma si corresponde
         if (config.useNEAT) {
             if (config.genomes && config.genomes[i]) {
-                aiCar.genome = config.genomes[i];
-                console.log(
-                    `🧬 Car ${aiCar.id} using evolved genome from generation ${config.generation}`
-                );
+                aiCar.genome = config.genomes[i]
+                // console.log(
+                // `🧬 Car ${aiCar.id} using evolved genome from generation ${config.generation}`
+                // );
             } else {
-                aiCar.genome = GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG);
-                console.log(`🆕 Car ${aiCar.id} using new random genome`);
+                aiCar.genome = GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG)
+                // console.log(`🆕 Car ${aiCar.id} using new random genome`)
             }
         }
-        return aiCar;
-    });
+        return aiCar
+    })
 }

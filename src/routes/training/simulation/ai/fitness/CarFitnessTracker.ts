@@ -170,9 +170,9 @@ export class CarFitnessTracker {
                 // Give points for reaching waypoints (except first one)
                 if (this.currentWaypointIndex > 0) {
                     this.metrics.checkpointsReached++
-                    console.log(
-                        `🎯 Car ${this.carId} reached waypoint ${this.currentWaypointIndex + 1}/${this.waypoints.length}`
-                    )
+                    // console.log(
+                    //     `🎯 Car ${this.carId} reached waypoint ${this.currentWaypointIndex + 1}/${this.waypoints.length}`
+                    // )
                 }
 
                 this.currentWaypointIndex++

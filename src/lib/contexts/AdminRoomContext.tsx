@@ -51,32 +51,25 @@ const AdminRoomContext = createContext<AdminRoomContextType | undefined>(
     undefined
 )
 
-interface AdminRoomProviderProps {
-    // No children prop needed since we'll use Outlet
-}
+interface AdminRoomProviderProps {}
 
 export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
     const { auth } = useAuth<AdminAuth>()
 
-    // Connection state
     const [isConnected, setIsConnected] = useState(false)
     const [connectionError, setConnectionError] = useState<string | null>(null)
 
-    // Room state
     const [currentRoom, setCurrentRoom] = useState<RaceRoom | null>(null)
     const [participants, setParticipants] = useState<RoomParticipant[]>([])
     const [racePackage, setRacePackage] = useState<RacePackage | null>(null)
 
-    // Loading states
     const [isCreatingRoom, setIsCreatingRoom] = useState(false)
     const [isConfiguringRace, setIsConfiguringRace] = useState(false)
     const [isStartingRace, setIsStartingRace] = useState(false)
     const [isClosingRoom, setIsClosingRoom] = useState(false)
 
-    // Error states
     const [roomError, setRoomError] = useState<string | null>(null)
 
-    // Initialize room state from localStorage
     useEffect(() => {
         const savedRoom = localStorage.getItem('admin-current-room')
         if (savedRoom) {
@@ -95,13 +88,10 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
         }
     }, [])
 
-    // Initialize WebSocket connection when authenticated
     useEffect(() => {
         try {
-            // 🔑 Connect with JWT token - all WebSocket endpoints require authentication
             const socket = racingWebSocketService.connect(auth.token)
 
-            // Connection event handlers
             socket.on('connect', () => {
                 setIsConnected(true)
                 setConnectionError(null)
@@ -118,7 +108,6 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
                 console.error('🔴 Admin connection error:', error)
             })
 
-            // Room event handlers
             setupRoomEventHandlers()
         } catch (error) {
             console.error('Failed to connect to racing server:', error)
@@ -131,10 +120,8 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
         }
     }, [auth.token])
 
-    // Check for existing room status when connected
     useEffect(() => {
         if (isConnected && currentRoom) {
-            // Verify the room still exists on the server
             racingWebSocketService.getRoomStatus(
                 currentRoom.id,
                 room => {
@@ -144,7 +131,6 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
                 },
                 error => {
                     console.log('❌ Room no longer exists on server:', error)
-                    // Clear the room from localStorage if it doesn't exist
                     setCurrentRoom(null)
                     setParticipants([])
                     localStorage.removeItem('admin-current-room')
@@ -153,7 +139,6 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
         }
     }, [isConnected, currentRoom?.id])
 
-    // Save room state to localStorage whenever it changes
     useEffect(() => {
         if (currentRoom) {
             localStorage.setItem(
@@ -165,9 +150,7 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
         }
     }, [currentRoom])
 
-    // Setup room event handlers
     const setupRoomEventHandlers = useCallback(() => {
-        // Player joined event
         racingWebSocketService.onPlayerJoined(data => {
             if (data.room) {
                 setCurrentRoom(data.room)
@@ -182,7 +165,6 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
             }
         })
 
-        // Player left event
         racingWebSocketService.onPlayerLeft(data => {
             if (data.room) {
                 setCurrentRoom(data.room)
@@ -195,14 +177,12 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
             }
         })
 
-        // Participant removed event
         racingWebSocketService.onParticipantRemoved(data => {
             console.log(
                 `👤 Participant ${data.userId} was removed: ${data.message}`
             )
         })
 
-        // Room closed event
         racingWebSocketService.onRoomClosed(data => {
             setCurrentRoom(null)
             setParticipants([])
@@ -212,7 +192,6 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
         })
     }, [])
 
-    // Room management methods
     const createRoom = useCallback(
         async (maxParticipants = 30): Promise<void> => {
             setIsCreatingRoom(true)
@@ -403,32 +382,26 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
     }, [])
 
     const value = {
-        // Connection state
         isConnected,
         connectionError,
 
-        // Room state
         currentRoom,
         participants,
         racePackage,
 
-        // Loading states
         isCreatingRoom,
         isConfiguringRace,
         isStartingRace,
         isClosingRoom,
 
-        // Error states
         roomError,
 
-        // Room management methods
         createRoom,
         configureRace,
         startRace,
         closeRoom,
         removeParticipant,
 
-        // Utility methods
         clearErrors,
         disconnect,
     }
