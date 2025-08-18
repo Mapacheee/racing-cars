@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'
 import { TRACKS, regenerateMainTrack } from '../../../../lib/racing/track'
-import { getPopulationSize } from '../ai/neat/NEATConfig'
+import { neatConfig } from '../ai/neat/NEATConfig'
 import { useFpsCounter } from '../../../../lib/racing/hooks/useFpsCounter'
 
 export default function CanvasSettingsMenu(): JSX.Element {
@@ -45,10 +45,8 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const track = TRACKS['main_circuit']
 
-    const totalCars = getPopulationSize() // Obtener dinámicamente de la configuración NEAT
-    const aliveCars =
-        totalCars -
-        Array.from(carStates.values()).filter(car => car.isEliminated).length
+    const totalCars = neatConfig.populationSize;
+    const aliveCars = totalCars - Array.from(carStates.values()).filter(car => car.isEliminated).length;
 
     useEffect(() => {
         document.title = 'Entrenamiento de la ia - Carrera neuronal 🏎️🧠'

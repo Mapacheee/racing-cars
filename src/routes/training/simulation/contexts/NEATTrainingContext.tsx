@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode, type JSX } from 'react'
-import { Population } from '../ai/neat/Population'
-import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig'
+import { Population } from 'neat-javascript';
+import { neatConfig } from '../ai/neat/NEATConfig';
 import { useRaceReset } from '../../../../lib/contexts/RaceResetContext'
 import type { FitnessMetrics } from '../types/neat'
 
@@ -19,7 +19,7 @@ interface NEATTrainingContextType {
     isTraining: boolean
     carStates: Map<string, CarState>
     bestFitness: number
-    population: Population
+    population: any
     simulationActive: React.MutableRefObject<boolean>
 
     // Funciones
@@ -57,7 +57,7 @@ export function NEATTrainingProvider({ children, onReset }: NEATTrainingProvider
     const [generation, setGeneration] = useState(1)
     const [isTraining, setIsTraining] = useState(false)
     const [carStates, setCarStates] = useState<Map<string, CarState>>(new Map())
-    const [population] = useState(() => new Population(DEFAULT_NEAT_CONFIG))
+    const [population] = useState(() => new Population(neatConfig));
     const [bestFitness, setBestFitness] = useState(0)
 
     // Hook para manejar reset de la escena
@@ -156,7 +156,7 @@ export function NEATTrainingProvider({ children, onReset }: NEATTrainingProvider
         console.log(`🧬 Starting evolution with ${carStatesArray.length} cars evaluated`)
 
         carStatesArray.forEach(carState => {
-            const genomes = population.getGenomes()
+            const genomes = population.genomes
             const genomeIndex = parseInt(carState.id.split('-')[1]) - 1
             
             if (genomeIndex >= 0 && genomeIndex < genomes.length) {
@@ -164,20 +164,18 @@ export function NEATTrainingProvider({ children, onReset }: NEATTrainingProvider
             }
         })
 
-        population.evolve()
+    population.evolve()
         
-        const statsAfter = population.getStats()
-        console.log(`🎉 Evolution complete! Generation ${statsAfter.generation + 1}`)
+    console.log(`🎉 Evolution complete! Generation ${population.generation}`)
 
-        const currentBest = population.getStats().bestFitness
-        setBestFitness(prev => Math.max(prev, currentBest))
+    const currentBest = population.bestFitness
+    setBestFitness(prev => Math.max(prev, currentBest))
 
-        const populationGen = population.getGeneration()
-        const newGeneration = populationGen + 1
-        console.log(`🔄 Setting UI generation from ${generation} to ${newGeneration}`)
-        setGeneration(newGeneration)
+    const newGeneration = population.generation
+    console.log(`🔄 Setting UI generation from ${generation} to ${newGeneration}`)
+    setGeneration(newGeneration)
         
-        setCarStates(new Map())
+    setCarStates(new Map())
         setIsTraining(false)
         simulationActive.current = false
 

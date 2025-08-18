@@ -1,5 +1,4 @@
-import { Network } from './neat/Network'
-import type { Genome } from '../types/neat'
+// import type { Genome } from 'neat-javascript';
 
 type ControlActions = {
     acceleration: number;
@@ -9,28 +8,25 @@ type ControlActions = {
     acceleration: number;
     steering: number;
 };
+
 import { SimpleCarPhysics } from './utils/SimpleCarPhysics';
 
 export class NEATCarController {
-    private network: Network
-    private genome: Genome
-    private startTime: number
-    private isControlActive: boolean
-    private carId: string
+    private genome: any;
+    private startTime: number;
+    private isControlActive: boolean;
+    private carId: string;
 
-    constructor(genome: Genome, carId?: string) {
-        this.genome = genome
-        this.network = new Network(genome)
-        this.startTime = Date.now()
-        this.isControlActive = false
-        this.carId = carId || ''
+    constructor(genome: any, carId?: string) {
+        this.genome = genome;
+        this.startTime = Date.now();
+        this.isControlActive = false;
+        this.carId = carId || '';
     }
 
     getControlActions(sensorReadings: any, speed: number): ControlActions {
         const maxSpeed = SimpleCarPhysics.getMaxSpeed();
         const speedNormalized = Math.max(0, Math.min(1, speed / maxSpeed));
-
-        // Inputs para la red NEAT
         const inputs: number[] = [
             sensorReadings.left,
             sensorReadings.leftCenter,
@@ -39,13 +35,11 @@ export class NEATCarController {
             sensorReadings.right,
             speedNormalized,
         ];
-
-        const outputs = this.network.activate(inputs) as number[];
+        // neat-javascript: genome.propagate(inputs) devuelve los outputs
+        const outputs = this.genome.propagate(inputs) as number[];
         const acceleration = Math.max(0, Math.min(1, outputs[0]));
         const steerRight = Math.max(0, Math.min(1, outputs[1]));
         const steerLeft = Math.max(0, Math.min(1, outputs[2]));
-
-        // Devuelve ambos valores de giro por separado
         return {
             acceleration,
             steerRight,
@@ -55,7 +49,6 @@ export class NEATCarController {
 
     applyActions(actions: ControlActions, rigidBody: any): void {
         if (!rigidBody) return;
-        // Si los valores de giro están presentes, calcula steering como la diferencia
         let steering = 0;
         if (
             typeof (actions as any).steerRight === 'number' &&
@@ -72,23 +65,16 @@ export class NEATCarController {
         SimpleCarPhysics.updateCarPhysics(rigidBody, controls);
     }
 
-    getGenome(): Genome {
-        return this.genome
-    }
-
-    getNetworkStats() {
-        return {
-            nodes: this.network.getNodeCount(),
-            connections: this.network.getActiveConnectionCount(),
-        }
+    getGenome(): any {
+        return this.genome;
     }
 
     isAIControlActive(): boolean {
-        return this.isControlActive
+        return this.isControlActive;
     }
 
     getControlDelay(): number {
-        const elapsedTime = Date.now() - this.startTime
-        return Math.max(0, 100 - elapsedTime)
+        const elapsedTime = Date.now() - this.startTime;
+        return Math.max(0, 100 - elapsedTime);
     }
 }

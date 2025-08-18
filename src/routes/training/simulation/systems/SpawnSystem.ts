@@ -1,6 +1,6 @@
 import type { Track } from '../../../../lib/racing/track'
 import type { AICar } from '../types/car'
-import { GenomeBuilder, DEFAULT_NEAT_CONFIG } from '../ai'
+// ...existing code...
 import { TRACKS } from '../../../../lib/racing/track'
 import { generateBaseCars } from '../../../../lib/racing/cars/systems/SpawnSystem'
 
@@ -55,16 +55,11 @@ export function generateAICars(config: {
             ...baseCar,
         };
         // Asignar genoma si corresponde
-        if (config.useNEAT) {
-            if (config.genomes && config.genomes[i]) {
-                aiCar.genome = config.genomes[i];
-                console.log(
-                    `🧬 Car ${aiCar.id} using evolved genome from generation ${config.generation}`
-                );
-            } else {
-                aiCar.genome = GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG);
-                console.log(`🆕 Car ${aiCar.id} using new random genome`);
-            }
+        if (config.useNEAT && config.genomes && config.genomes[i]) {
+            aiCar.genome = config.genomes[i];
+            console.log(
+                `🧬 Car ${aiCar.id} using evolved genome from generation ${config.generation}`
+            );
         }
         return aiCar;
     });

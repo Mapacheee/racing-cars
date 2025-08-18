@@ -11,12 +11,7 @@ import {
     type Car3DRef,
     type AICar as AICarType,
 } from '../../../../lib/racing/cars';
-import {
-    NEATCarController,
-    CarFitnessTracker,
-    GenomeBuilder,
-} from '../ai';
-import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig';
+import { CarFitnessTracker } from '../ai';
 import type { FitnessMetrics } from '../types/neat';
 import { useNEATTraining } from '../contexts/NEATTrainingContext';
 import { CAR_PHYSICS_CONFIG } from '../config/physics';
@@ -53,10 +48,7 @@ export default function AICar({
 
     // Track y controlador IA
     const track = TRACKS[carData.trackId || 'circuito 1'];
-    const [controller] = useState(() => {
-        const genome = carData.genome || GenomeBuilder.createMinimal(DEFAULT_NEAT_CONFIG);
-        return new NEATCarController(genome, carData.id);
-    });
+    // El genome ahora viene de neat-javascript y se asigna en carData.genome
     const [fitnessTracker] = useState(() => {
         const startPos = new Vector3(...carData.position);
         return new CarFitnessTracker(carData.id, startPos, track.waypoints);
@@ -121,41 +113,39 @@ export default function AICar({
                         DEFAULT_SENSOR_CONFIG
                     );
                     fitnessTracker.updateSensorFitness(readings);
-                        // Acciones IA
+                        // Acciones IA usando neat-javascript
                         const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-                        let actions = controller.getControlActions(readings, speed);
+                        const speedNormalized = Math.max(0, Math.min(1, speed / 25)); // Ajusta el divisor según tu física
+                        const inputs = [
+                            readings.left,
+                            readings.leftCenter,
+                            readings.center,
+                            readings.rightCenter,
+                            readings.right,
+                            speedNormalized,
+                        ];
+                        const outputs = carData.genome.propagate(inputs);
+                        // outputs: [aceleración, giro derecha, giro izquierda]
+                        let acceleration = outputs[0];
+                        let steerRight = outputs[1];
+                        let steerLeft = outputs[2];
                         // Forzar aceleración y giro neutro al inicio o si está lento
-                        if (fitnessTracker.getFitnessMetrics().timeAlive < 2) {
-                            actions.acceleration = 1;
-                            if ('steerRight' in actions && 'steerLeft' in actions) {
-                                actions.steerRight = 0;
-                                actions.steerLeft = 0;
-                            } else {
-                                actions.steering = 0;
-                            }
+                        if (fitnessTracker.getFitnessMetrics().timeAlive < 2 || speed < 0.5) {
+                            acceleration = 1;
+                            steerRight = 0;
+                            steerLeft = 0;
                         }
-                        if (speed < 0.5) {
-                            actions.acceleration = 1;
-                            if ('steerRight' in actions && 'steerLeft' in actions) {
-                                actions.steerRight = 0;
-                                actions.steerLeft = 0;
-                            } else {
-                                actions.steering = 0;
-                            }
-                        }
-                        controller.applyActions(actions, rb);
-                    let steering = 0;
-                    if ('steerRight' in actions && 'steerLeft' in actions) {
-                        steering = actions.steerRight - actions.steerLeft;
-                    } else if ('steering' in actions) {
-                        steering = actions.steering;
-                    }
-                    fitnessTracker.recordSteering(steering);
-                    // Actualizar fitness
+                        const steering = steerRight - steerLeft;
+                        rb.setLinvel({
+                            x: Math.sin(heading) * acceleration * 10,
+                            y: velocity.y,
+                            z: Math.cos(heading) * acceleration * 10,
+                        });
+                        rb.setAngvel({ x: 0, y: steering * 5, z: 0 });
+                        fitnessTracker.recordSteering(steering);
                     const currentPosition = new Vector3(position.x, position.y, position.z);
                     const currentVelocity = new Vector3(velocity.x, velocity.y, velocity.z);
                     fitnessTracker.update(currentPosition, currentVelocity);
-                    // Eliminar si está quieto
                     if (speed < 0.1) {
                         setQuietTime(qt => {
                             const newQt = qt + 1 / 60;
@@ -184,7 +174,7 @@ export default function AICar({
         }
         frame = requestAnimationFrame(updateSimulation);
         return () => cancelAnimationFrame(frame);
-    }, [track, controller, fitnessTracker, carData.id, onFitnessUpdate, isEliminated, isTraining]);
+    }, [track, fitnessTracker, carData.id, onFitnessUpdate, isEliminated, isTraining]);
 
     // Datos en tiempo real para renderizado y sensores
     const realTimeCarData = {
