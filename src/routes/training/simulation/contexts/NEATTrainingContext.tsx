@@ -67,8 +67,8 @@ export function NEATTrainingProvider({ children, onReset }: NEATTrainingProvider
             {
                 mutation: methods.mutation.ALL,
                 popsize: 20,
-                mutationRate: 0.4, 
-                elitism: 1,
+                mutationRate: 0.55, 
+                elitism: 3,
             }
         );
         neatRef.current.population.forEach((network: any) => {

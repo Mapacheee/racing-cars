@@ -1,7 +1,7 @@
 export interface NEATConfig {
     populationSize: number
-    inputNodes: number    // 5 sensores
-    outputNodes: number   // 2 salidas (aceleración, dirección)
+    inputNodes: number
+    outputNodes: number
     mutationRates: {
         addNode: number
         addConnection: number
@@ -13,11 +13,7 @@ export interface NEATConfig {
         compatibilityThreshold: number
         c1: number  // Coeficiente excess genes
         c2: number  // Coeficiente disjoint genes  
-        c3: number  // Coeficiente weight differences
-    }
-    survival: {
-        survivalRate: number
-        eliteSize: number
+        c3: number  // Coeficiente weight dieSize: number
     }
 }
 

@@ -29,15 +29,10 @@ export const DEFAULT_NEAT_CONFIG: NEATConfig = {
     
     speciation: {
         compatibilityThreshold: 2.5,  
-        c1: 1.0,  // Excess genes
-        c2: 1.0,  // Disjoint genes
+        c1: 0.4,  // Excess genes
+        c2: 0.8,  // Disjoint genes
         c3: 0.4   // Weight differences
     },
-    
-    survival: {
-        survivalRate: 0.15,  
-        eliteSize: 4     
-    }
 }
 
 
