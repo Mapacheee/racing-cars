@@ -1,7 +1,6 @@
 import { RigidBody, interactionGroups } from '@react-three/rapier'
 import { CuboidCollider } from '@react-three/rapier'
 import type { Wall } from '../types/index'
-import React from 'react'
 
 interface TrackWallsProps {
     walls: Wall[]
@@ -66,8 +65,9 @@ export default function TrackWalls({
                 const length = Math.sqrt(dx * dx + dz * dz);
                 const rotation = Math.atan2(dx, dz);
                 return (
-                    <React.Fragment key={`wall-fragment-${index}`}>
+                    <>
                         <mesh
+                            key={`wall-mesh-${index}`}
                             position={[centerX, 0.25, centerZ]}
                             rotation={[0, rotation, 0]}
                             userData={{ type: 'wall', side: wall.side }}
@@ -86,13 +86,14 @@ export default function TrackWalls({
                             />
                         </mesh>
                         <CuboidCollider
-                            position={[centerX, 0.5, centerZ]}
+                            key={`wall-collider-${index}`}
+                            position={[centerX, 0.25, centerZ]}
                             rotation={[0, rotation, 0]}
-                            args={[0.4, 2.5, length / 2]}
-                            restitution={0.3}
-                            friction={2.5}
+                            args={[0.25, 1.5, length / 2]}
+                            restitution={0.1}
+                            friction={2.0}
                         />
-                    </React.Fragment>
+                    </>
                 );
             })}
         </RigidBody>

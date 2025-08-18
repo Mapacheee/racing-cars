@@ -1,12 +1,13 @@
-export { Network } from 'neat-javascript'
-export { GenomeBuilder, GenomeUtils } from 'neat-javascript'
-export { Mutations } from 'neat-javascript'
-export { Population } from 'neat-javascript'
+// NEAT Core Classes
+export { Network } from './neat/Network'
+export { GenomeBuilder, GenomeUtils } from './neat/Genome'
+export { Mutations } from './neat/Mutations'
+export { Population } from './neat/Population'
 export {
     DEFAULT_NEAT_CONFIG,
     FITNESS_CONFIG,
     InnovationCounter,
-} from 'neat-javascript'
+} from './neat/NEATConfig'
 
 // Fitness Evaluation
 export { FitnessEvaluator } from './fitness/FitnessEvaluator'
@@ -15,6 +16,7 @@ export { TrackDistanceTracker } from './fitness/TrackDistanceTracker'
 
 // Car Control
 export { NEATCarController } from './NEATCarController'
+export { ManualCarController } from './ManualCarController'
 
 // Types
 export type {

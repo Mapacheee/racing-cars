@@ -13,7 +13,7 @@ export default function CarScene(): JSX.Element {
     const { showWaypoints, showWalls } = useCanvasSettings()
     const { resetCounter } = useRaceReset()
     const [, forceUpdate] = useState({})
-    const trackUpdateKey = useTrackUpdates()
+    const trackUpdateKey = useTrackUpdates() // Listen for track updates
     const neatContext = useNEATTraining()
 
     if (!neatContext) {
@@ -25,12 +25,12 @@ export default function CarScene(): JSX.Element {
         carStates,
         handleFitnessUpdate,
         handleCarElimination,
-        population,
+        neatRef,
     } = neatContext
 
     // regenerate cars when generation changes
     const [aiCars, setAiCars] = useState(() => {
-        const initialGenomes = population.genomes.slice(0, 20)
+        const initialGenomes = neatRef?.current?.population?.slice(0, 20) || [];
         return generateAICars({
             trackId: 'main_circuit',
             carCount: 20,
@@ -74,7 +74,7 @@ export default function CarScene(): JSX.Element {
 
     // update cars when generation changes
     useEffect(() => {
-        const allGenomes = population.genomes
+    const allGenomes = neatRef?.current?.population || [];
         const config: any = {
             trackId: currentTrack,
             carCount: 20,
@@ -108,7 +108,7 @@ export default function CarScene(): JSX.Element {
         const newCars = generateAICars(config)
         setAiCars(newCars)
         forceUpdate({})
-    }, [generation, currentTrack, population, resetCounter, trackUpdateKey])
+    }, [generation, currentTrack, neatRef, resetCounter, trackUpdateKey])
 
     return (
         <TrackScene

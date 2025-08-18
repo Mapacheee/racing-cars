@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'
 import { TRACKS, regenerateMainTrack } from '../../../../lib/racing/track'
-import { neatConfig } from '../ai/neat/NEATConfig'
+import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig'
 import { useFpsCounter } from '../../../../lib/racing/hooks/useFpsCounter'
 
 export default function CanvasSettingsMenu(): JSX.Element {
@@ -43,7 +43,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const track = TRACKS['main_circuit']
 
-    const totalCars = neatConfig.populationSize;
+    const totalCars = DEFAULT_NEAT_CONFIG.populationSize;
     const aliveCars = totalCars - Array.from(carStates.values()).filter(car => car.isEliminated).length;
 
     useEffect(() => {
@@ -194,6 +194,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     </div>
                 )}
 
+        
             </div>
 
             {/* Sección ajustes existente */}
@@ -233,12 +234,8 @@ export default function CanvasSettingsMenu(): JSX.Element {
                 </label>
 
                 <div className="border-t pt-2 mt-2">
-                    <div className="text-xs font-medium text-gray-700 mb-1">
-                        Pista: {track.name}
-                    </div>
                     <div className="text-xs text-gray-500 mb-2">
                         {track.waypoints.length} Puntos •{' '}
-                        {Math.round(track.length)}m •{' '}
                         <span className={getFpsColor(fps)}>{fps}</span> FPS
                     </div>
                     <button
@@ -250,7 +247,6 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     </button>
                 </div>
             </div>
-
         </div>
     )
 }

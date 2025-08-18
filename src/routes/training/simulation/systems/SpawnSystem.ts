@@ -1,6 +1,6 @@
 import type { Track } from '../../../../lib/racing/track'
 import type { AICar } from '../types/car'
-// ...existing code...
+import { Neat, methods } from 'neataptic';
 import { TRACKS } from '../../../../lib/racing/track'
 import { generateBaseCars } from '../../../../lib/racing/cars/systems/SpawnSystem'
 
@@ -54,12 +54,24 @@ export function generateAICars(config: {
         const aiCar: AICar = {
             ...baseCar,
         };
-        // Asignar genoma si corresponde
-        if (config.useNEAT && config.genomes && config.genomes[i]) {
-            aiCar.genome = config.genomes[i];
-            console.log(
-                `🧬 Car ${aiCar.id} using evolved genome from generation ${config.generation}`
-            );
+        if (config.useNEAT) {
+            if (config.genomes && config.genomes[i]) {
+                if (typeof config.genomes[i].toJSON === 'function') {
+                    aiCar.genome = config.genomes[i].toJSON();
+                } else {
+                    aiCar.genome = config.genomes[i];
+                }
+                console.log(
+                    `🧬 Car ${aiCar.id} using evolved network JSON from generation ${config.generation}`
+                );
+            } else {
+                const tempNeat = new Neat(6, 3, null, {
+                    mutation: methods.mutation.ALL,
+                    popsize: 1,
+                });
+                aiCar.genome = tempNeat.population[0].toJSON();
+                console.log(`🆕 Car ${aiCar.id} using new random network JSON`);
+            }
         }
         return aiCar;
     });
