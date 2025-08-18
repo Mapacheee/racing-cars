@@ -82,7 +82,10 @@ export function generateRandomTrack(
         roadPieceLength: ROAD_GEOMETRY.length,
     })
 
-    return splineTrackToTrack(splineTrack, id, name, controlPoints)
+    const track = splineTrackToTrack(splineTrack, id, name, controlPoints)
+    TRACKS[id] = track
+    TRACKS['current'] = track
+    return track
 }
 
 // main track definition - generated procedurally

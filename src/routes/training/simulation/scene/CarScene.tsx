@@ -13,7 +13,7 @@ export default function CarScene(): JSX.Element {
     const { showWaypoints, showWalls } = useCanvasSettings()
     const { resetCounter } = useRaceReset()
     const [, forceUpdate] = useState({})
-    const trackUpdateKey = useTrackUpdates() // Listen for track updates
+    const trackUpdateKey = useTrackUpdates()
     const neatContext = useNEATTraining()
 
     if (!neatContext) {
@@ -28,55 +28,15 @@ export default function CarScene(): JSX.Element {
         neatRef,
     } = neatContext
 
-    // regenerate cars when generation changes
-    const [aiCars, setAiCars] = useState(() => {
-        const initialGenomes = neatRef?.current?.population?.slice(0, 20) || [];
-        return generateAICars({
-            trackId: 'main_circuit',
-            carCount: 20,
-            colors: [
-                'red',
-                'blue',
-                'green',
-                'yellow',
-                'purple',
-                'orange',
-                'pink',
-                'cyan',
-                'magenta',
-                'lime',
-                'indigo',
-                'maroon',
-                'navy',
-                'olive',
-                'teal',
-                'silver',
-                'gold',
-                'coral',
-                'salmon',
-                'khaki',
-            ],
-            useNEAT: true,
-            generation: generation,
-            genomes: initialGenomes,
-        })
-    })
+    const [aiCars, setAiCars] = useState<any[]>([]);
 
-    const currentTrack = 'main_circuit'
-    // Get track fresh from TRACKS registry on each render to catch updates
-    const track = TRACKS[currentTrack]
+    const trackId = TRACKS['current'] ? TRACKS['current'].id : 'main_circuit';
+    const track = TRACKS['current'] || TRACKS['main_circuit'];
 
-    // Listen for track updates (this will be triggered by track regeneration)
     useEffect(() => {
-        // Track updates will cause re-render through trackUpdateKey
-        // This effect runs when trackUpdateKey changes
-    }, [resetCounter, trackUpdateKey])
-
-    // update cars when generation changes
-    useEffect(() => {
-    const allGenomes = neatRef?.current?.population || [];
+        const allGenomes = neatRef?.current?.population || [];
         const config: any = {
-            trackId: currentTrack,
+            trackId,
             carCount: 20,
             colors: [
                 'red',
@@ -103,12 +63,12 @@ export default function CarScene(): JSX.Element {
             useNEAT: true,
             generation: generation,
             genomes: allGenomes,
-        }
+        };
+        const newCars = generateAICars(config);
+        setAiCars(newCars);
+        forceUpdate({});
+    }, [generation, trackId, trackUpdateKey, resetCounter, neatRef]);
 
-        const newCars = generateAICars(config)
-        setAiCars(newCars)
-        forceUpdate({})
-    }, [generation, currentTrack, neatRef, resetCounter, trackUpdateKey])
 
     return (
         <TrackScene

@@ -58,12 +58,12 @@ export default function CanvasSettingsMenu(): JSX.Element {
         const seed = Math.floor(Math.random() * 1000000)
 
         // Use regenerateMainTrack to properly update the main circuit
-        regenerateMainTrack(seed)
-
+        const newTrack = regenerateMainTrack(seed)
+        TRACKS['current'] = newTrack
+        import('../utils/TrackUpdateEvent').then(module => {
+            module.trackUpdateEvents.notifyTrackUpdate()
+        })
         console.log(`🔄 Generated new track with seed: ${seed}`)
-
-        // No need for page reload - the track update event system will handle it
-        // The useTrackUpdates hook in CarScene will detect the change and trigger re-render
     }
 
 
