@@ -38,7 +38,9 @@ export default function AICar({
     const carRef = useRef<Car3DRef>(null);
     const { showCollisions } = useCanvasSettings();
     const neatContext = useNEATTraining();
-    if (!neatContext || !neatContext.neatRef?.current) return null;
+    if (!neatContext || !neatContext.neatRef?.current) {
+        return <></>;
+    }
     const { isTraining, generation, neatRef } = neatContext;
 
     // Estado local para posición y orientación
@@ -67,14 +69,15 @@ export default function AICar({
         setFitnessTracker(new CarFitnessTracker(carData.id, startPos, track.waypoints));
     }, [track.waypoints]);
 
-    // Reset de posición y fitness al cambiar generación o spawn
     useEffect(() => {
+        const startPos = new Vector3(...carData.position);
+        setCarPosition(startPos);
+        setCarHeading(carData.rotation || 0);
         if (carRef.current) {
             carRef.current.resetPosition(carData.position, [0, carData.rotation || 0, 0]);
-            const startPos = new Vector3(...carData.position);
             fitnessTracker.reset(startPos);
         }
-    }, [generation, carData.position, carData.rotation, fitnessTracker]);
+    }, [generation, carData.position, carData.rotation, track, fitnessTracker]);
 
     // Handler de colisión física con muros
     const handleCollisionEnter = (_event: any) => {
@@ -147,7 +150,7 @@ export default function AICar({
                         readings.center,
                         readings.rightCenter,
                         readings.right,
-                        angleToWaypoint
+                        speed 
                     ];
                     let acceleration = 0, steerRight = 0, steerLeft = 0, steering = 0;
                     if (neatNetwork && typeof neatNetwork.activate === 'function') {
@@ -245,7 +248,7 @@ export default function AICar({
                 carRotation={realTimeCarData.heading}
                 sensorReadings={currentSensorReadings}
                 config={DEFAULT_SENSOR_CONFIG}  
-                visualConfig={{ centerOffset: { x: -19.5, y: 0.8, z: -4.38 } }}
+                visualConfig={{ centerOffset: { x: -20.6, y: 0.8, z: -5.38 } }}
                 showCollisions={showCollisions}
                 visible={true}
             />
