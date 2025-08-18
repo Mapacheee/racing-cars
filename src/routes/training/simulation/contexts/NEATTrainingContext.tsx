@@ -35,6 +35,7 @@ interface NEATTrainingContextType {
     // Backend states
     isSaving: boolean
     isLoading: boolean
+    isInitializing: boolean
     backendError: string | null
 
     // Funciones
@@ -93,6 +94,7 @@ export function NEATTrainingProvider({
     const [carStates, setCarStates] = useState<Map<string, CarState>>(new Map())
     const [population] = useState(() => new Population(DEFAULT_NEAT_CONFIG))
     const [bestFitness, setBestFitness] = useState(0)
+    const [isInitializing, setIsInitializing] = useState(true)
 
     const { triggerReset } = useRaceReset()
 
@@ -343,6 +345,7 @@ export function NEATTrainingProvider({
     useEffect(() => {
         const initializeFromBackend = async () => {
             console.log('🔄 Initializing AI data from backend...')
+            setIsInitializing(true)
 
             try {
                 // Try to load latest generation from server
@@ -401,6 +404,8 @@ export function NEATTrainingProvider({
                 console.error('❌ Failed to initialize from backend:', error)
                 console.log('🔄 Falling back to default initialization')
                 // Fallback to default initialization if backend is not available
+            } finally {
+                setIsInitializing(false)
             }
         }
 
@@ -419,6 +424,7 @@ export function NEATTrainingProvider({
         // Backend states
         isSaving: aiModels.loading,
         isLoading: aiModels.loading,
+        isInitializing,
         backendError: aiModels.error,
 
         // Funciones

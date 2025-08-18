@@ -200,7 +200,6 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
             try {
                 const blob = await exportGenomesAPI(auth.token, options)
 
-                // Create download link
                 const url = window.URL.createObjectURL(blob)
                 const link = document.createElement('a')
                 link.href = url

@@ -2,9 +2,37 @@ import type { JSX, ReactNode } from 'react'
 import { useState, useCallback } from 'react'
 import CanvasSettingsMenu from './components/CanvasSettingsMenu'
 import SimulationCanvas from './components/SimulationCanvas'
-import { NEATTrainingProvider } from './contexts/NEATTrainingContext'
+import LoadingScreen from './components/LoadingScreen'
+import LoadingWrapper from './components/LoadingWrapper'
+import {
+    NEATTrainingProvider,
+    useNEATTraining,
+} from './contexts/NEATTrainingContext'
 import { CarProvider } from '../../../lib/contexts/CarContext'
 import { RaceResetProvider } from '../../../lib/contexts/RaceResetContext'
+
+function SimulationContent(): JSX.Element {
+    const neatContext = useNEATTraining()
+
+    if (!neatContext) {
+        return <LoadingScreen message="Inicializando contexto NEAT..." />
+    }
+
+    const { isInitializing } = neatContext
+
+    return (
+        <LoadingWrapper
+            isLoading={isInitializing}
+            message="Cargando datos de entrenamiento desde el servidor..."
+            minimumDisplayTime={1500} // 1.5 seconds minimum
+        >
+            <>
+                <CanvasSettingsMenu />
+                <SimulationCanvas />
+            </>
+        </LoadingWrapper>
+    )
+}
 
 function SimulatorProviders({
     children,
@@ -34,8 +62,7 @@ export default function TrainingSimulation(): JSX.Element {
     return (
         <SimulatorProviders>
             <div className="fixed inset-0 w-screen h-screen bg-cyan-200 z-50">
-                <CanvasSettingsMenu />
-                <SimulationCanvas />
+                <SimulationContent />
             </div>
         </SimulatorProviders>
     )
