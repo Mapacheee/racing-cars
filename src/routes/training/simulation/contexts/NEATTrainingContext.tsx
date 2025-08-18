@@ -101,6 +101,10 @@ export function NEATTrainingProvider({
         onSuccess: message => console.log('Backend success:', message),
     })
 
+    useEffect(() => {
+        console.log('@@@@ aiModels: ', aiModels)
+    }, [aiModels])
+
     // Hook for updating player profile in background
     const { updateAiGeneration } = usePlayerProfileUpdates()
 
@@ -338,12 +342,6 @@ export function NEATTrainingProvider({
     // Auto-load latest generation on mount or create first generation
     useEffect(() => {
         const initializeFromBackend = async () => {
-            // Wait for auth to be ready
-            if (!aiModels.isAuthReady) {
-                console.log('🔄 Waiting for authentication to be ready...')
-                return
-            }
-
             console.log('🔄 Initializing AI data from backend...')
 
             try {
@@ -407,7 +405,7 @@ export function NEATTrainingProvider({
         }
 
         initializeFromBackend()
-    }, [aiModels, aiModels.isAuthReady, population, updateAiGeneration])
+    }, [aiModels, population, updateAiGeneration])
 
     const value: NEATTrainingContextType = {
         // Estados

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useAuth } from '../../../../lib/contexts/AuthContext'
 import {
     pushGeneration,
@@ -19,12 +19,14 @@ interface UseAIModelsOptions {
 }
 
 export function useAIModels(options: UseAIModelsOptions = {}) {
-    const { auth, isLoading: authLoading } = useAuth<PlayerAuth>()
+    const { auth, isLoading } = useAuth<PlayerAuth>()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Guard against auth not being ready
-    const isAuthReady = !authLoading && auth && auth.token
+    useEffect(() => {
+        console.log('@@@@ isLoading: ', isLoading)
+        console.log('@@@@ auth: ', auth)
+    }, [isLoading])
 
     const handleError = useCallback(
         (error: Error) => {
@@ -52,8 +54,8 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
             genomes: Genome[],
             config: NEATConfig
         ): Promise<AIModelResponse | null> => {
-            if (!isAuthReady) {
-                handleError(new Error('Authentication not ready'))
+            if (!auth?.token) {
+                handleError(new Error('No authentication token available'))
                 return null
             }
 
@@ -64,7 +66,7 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
                     config,
                 }
 
-                const result = await pushGeneration(auth!.token, data)
+                const result = await pushGeneration(auth.token, data)
                 handleSuccess(
                     `Generation ${generationNumber} saved successfully`
                 )
@@ -76,20 +78,20 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
                 setLoading(false)
             }
         },
-        [isAuthReady, auth, handleError, handleSuccess]
+        [auth, handleError, handleSuccess]
     )
 
     // Load latest generation from backend
     const loadLatestGeneration =
         useCallback(async (): Promise<AIModelResponse | null> => {
-            if (!isAuthReady) {
-                handleError(new Error('Authentication not ready'))
+            if (!auth?.token) {
+                handleError(new Error('No authentication token available'))
                 return null
             }
 
             setLoading(true)
             try {
-                const result = await getLatestGeneration(auth!.token)
+                const result = await getLatestGeneration(auth.token)
                 if (result) {
                     handleSuccess(
                         `Latest generation ${result.generationNumber} loaded`
@@ -104,21 +106,18 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
             } finally {
                 setLoading(false)
             }
-        }, [isAuthReady, auth, handleError, handleSuccess])
+        }, [auth, handleError, handleSuccess])
 
     const loadGeneration = useCallback(
         async (generationNumber: number): Promise<AIModelResponse | null> => {
-            if (!isAuthReady) {
-                handleError(new Error('Authentication not ready'))
+            if (!auth?.token) {
+                handleError(new Error('No authentication token available'))
                 return null
             }
 
             setLoading(true)
             try {
-                const result = await getGeneration(
-                    auth!.token,
-                    generationNumber
-                )
+                const result = await getGeneration(auth.token, generationNumber)
                 handleSuccess(`Generation ${generationNumber} loaded`)
                 return result
             } catch (error) {
@@ -128,19 +127,19 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
                 setLoading(false)
             }
         },
-        [isAuthReady, auth, handleError, handleSuccess]
+        [auth, handleError, handleSuccess]
     )
 
     // Reset all saved generations
     const resetAllGenerations = useCallback(async (): Promise<boolean> => {
-        if (!isAuthReady) {
-            handleError(new Error('Authentication not ready'))
+        if (!auth?.token) {
+            handleError(new Error('No authentication token available'))
             return false
         }
 
         setLoading(true)
         try {
-            await resetAllGenerationsAPI(auth!.token)
+            await resetAllGenerationsAPI(auth.token)
             handleSuccess('All generations reset successfully')
             return true
         } catch (error) {
@@ -149,18 +148,18 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
         } finally {
             setLoading(false)
         }
-    }, [isAuthReady, auth, handleError, handleSuccess])
+    }, [auth, handleError, handleSuccess])
 
     // Get generation statistics
     const getStatistics = useCallback(async () => {
-        if (!isAuthReady) {
-            handleError(new Error('Authentication not ready'))
+        if (!auth?.token) {
+            handleError(new Error('No authentication token available'))
             return null
         }
 
         setLoading(true)
         try {
-            const stats = await getGenerationStatistics(auth!.token)
+            const stats = await getGenerationStatistics(auth.token)
             handleSuccess('Statistics loaded')
             return stats
         } catch (error) {
@@ -169,35 +168,37 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
         } finally {
             setLoading(false)
         }
-    }, [isAuthReady, auth, handleError, handleSuccess])
+    }, [auth, handleError, handleSuccess])
 
     // Check if any generations exist
     const hasAnyGenerations = useCallback(async (): Promise<boolean> => {
-        if (!isAuthReady) {
-            console.warn('Authentication not ready for checking generations')
+        if (!auth?.token) {
+            console.warn(
+                'No authentication token available for checking generations'
+            )
             return false
         }
 
         try {
-            const latest = await getLatestGeneration(auth!.token)
+            const latest = await getLatestGeneration(auth.token)
             return latest !== null
         } catch (error) {
             console.warn('Error checking for existing generations:', error)
             return false
         }
-    }, [isAuthReady, auth])
+    }, [auth])
 
     // Export genomes
     const exportGenomes = useCallback(
         async (options: { generationNumber?: number; topN?: number } = {}) => {
-            if (!isAuthReady) {
-                handleError(new Error('Authentication not ready'))
+            if (!auth?.token) {
+                handleError(new Error('No authentication token available'))
                 return false
             }
 
             setLoading(true)
             try {
-                const blob = await exportGenomesAPI(auth!.token, options)
+                const blob = await exportGenomesAPI(auth.token, options)
 
                 // Create download link
                 const url = window.URL.createObjectURL(blob)
@@ -218,13 +219,13 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
                 setLoading(false)
             }
         },
-        [isAuthReady, auth, handleError, handleSuccess]
+        [auth, handleError, handleSuccess]
     )
 
     return {
-        loading: loading || authLoading,
+        loading: loading || isLoading,
         error,
-        isAuthReady,
+        isAuthReady: !isLoading && !!auth?.token,
         saveGeneration,
         loadLatestGeneration,
         loadGeneration,

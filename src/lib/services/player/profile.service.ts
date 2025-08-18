@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from 'axios'
-import type { Player } from '../../types/auth'
+import type { PlayerProfile } from '../../types/auth'
 
 const API_URL: string = import.meta.env['VITE_API_URL']
 
@@ -17,7 +17,7 @@ function createAuthenticatedClient(token: string): AxiosInstance {
 export async function tryFetchPlayerProfile(
     token: string,
     username: string
-): Promise<Player> {
+): Promise<PlayerProfile> {
     try {
         const client = createAuthenticatedClient(token)
         const response = await client.get(`/users/${username}`)
@@ -37,8 +37,8 @@ export async function tryFetchPlayerProfile(
 export async function tryUpdatePlayerProfile(
     token: string,
     username: string,
-    updates: Partial<Pick<Player, 'username' | 'aiGeneration'>>
-): Promise<Player> {
+    updates: Partial<Pick<PlayerProfile, 'username' | 'aiGeneration'>>
+): Promise<PlayerProfile> {
     try {
         const client = createAuthenticatedClient(token)
         const response = await client.patch(`/users/${username}`, updates)
@@ -57,7 +57,7 @@ export async function tryUpdatePlayerProfile(
 export async function trySyncPlayerAiGeneration(
     token: string,
     username: string
-): Promise<Player> {
+): Promise<PlayerProfile> {
     try {
         const client = createAuthenticatedClient(token)
         const response = await client.post(

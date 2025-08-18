@@ -4,6 +4,16 @@ export type Player = {
     aiGeneration: number
     token: string
 }
+
+// Backend entity response (without token)
+export type PlayerProfile = {
+    id: string
+    username: string
+    aiGeneration: number
+    createdAt: string
+    updatedAt: string
+}
+
 export type Admin = {
     username: string
     token: string

@@ -20,6 +20,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
     const navigate = useNavigate()
     const [showRestartModal, setShowRestartModal] = useState(false)
     const [showStopModal, setShowStopModal] = useState(false)
+    const [showResetAllModal, setShowResetAllModal] = useState(false)
     const { fps, getFpsColor } = useFpsCounter()
 
     if (!neatContext) {
@@ -41,6 +42,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
         stopTraining,
         restartGeneration,
         evolveToNextGeneration,
+        resetAllSavedGenerations,
     } = neatContext
 
     const track = TRACKS['main_circuit']
@@ -60,14 +62,8 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const handleGenerateNewTrack = () => {
         const seed = Math.floor(Math.random() * 1000000)
-
-        // Use regenerateMainTrack to properly update the main circuit
         regenerateMainTrack(seed)
-
         console.log(`🔄 Generated new track with seed: ${seed}`)
-
-        // No need for page reload - the track update event system will handle it
-        // The useTrackUpdates hook in CarScene will detect the change and trigger re-render
     }
 
     const handleRestartConfirm = () => {
@@ -93,6 +89,21 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const handleStopCancel = () => {
         setShowStopModal(false)
+    }
+
+    const handleResetAllConfirm = async () => {
+        try {
+            await resetAllSavedGenerations()
+            setShowResetAllModal(false)
+            console.log('🗑️ All AI generations have been reset successfully')
+        } catch (error) {
+            console.error('❌ Failed to reset AI generations:', error)
+            // You could add a toast notification here if you have one
+        }
+    }
+
+    const handleResetAllCancel = () => {
+        setShowResetAllModal(false)
     }
 
     return (
@@ -225,7 +236,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
                 {/* Botón de empezar desde cero */}
                 <div className="mt-3 pt-3 border-t border-gray-200">
                     <button
-                        onClick={() => setShowRestartModal(true)}
+                        onClick={() => setShowResetAllModal(true)}
                         className="w-full bg-gray-600 hover:bg-gray-700 text-white py-1 px-2 rounded text-xs transition-colors"
                     >
                         Empezar desde cero
@@ -348,6 +359,38 @@ export default function CanvasSettingsMenu(): JSX.Element {
                                 className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded transition-colors"
                             >
                                 Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de confirmación para empezar desde cero */}
+            {showResetAllModal && (
+                <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
+                    <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                            ⚠️ ¿Empezar desde cero?
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            Esto eliminará{' '}
+                            <strong>todas las generaciones de IA</strong>{' '}
+                            guardadas en el servidor y comenzará un
+                            entrenamiento completamente nuevo. Esta acción{' '}
+                            <strong>no se puede deshacer</strong>.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={handleResetAllCancel}
+                                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleResetAllConfirm}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                            >
+                                Sí, eliminar todo
                             </button>
                         </div>
                     </div>

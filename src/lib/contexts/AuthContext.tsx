@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+    type ReactNode,
+} from 'react'
 import Cookies from 'js-cookie'
 import type {
     AdminAuth,
@@ -35,6 +41,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string>('')
 
+    useEffect(() => {
+        console.log('##### loading: ', isLoading)
+        console.log('##### auth: ', auth)
+    }, [isLoading])
+
     useState(() => {
         const initializeAuth = async () => {
             const adminCookie = Cookies.get('admin')
@@ -61,9 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 playerData.token,
                                 playerData.username
                             )
-                            setAuth(freshProfile)
+                            const completePlayerData = {
+                                ...freshProfile,
+                                token: playerData.token,
+                            }
+                            setAuth(completePlayerData)
                             setRole('player')
-                            setAuthCookies(freshProfile, 'player')
+                            setAuthCookies(completePlayerData, 'player')
                         } catch (error) {
                             // console.warn(
                             //     'Failed to fetch fresh profile, using cookie data:',
@@ -107,9 +122,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     player.token,
                     player.username
                 )
-                setAuth(freshProfile)
+                const completePlayerData = {
+                    ...freshProfile,
+                    token: player.token,
+                }
+                setAuth(completePlayerData)
                 setRole('player')
-                setAuthCookies(freshProfile, 'player')
+                setAuthCookies(completePlayerData, 'player')
             } catch (profileError) {
                 console.warn(
                     'Failed to fetch fresh profile, using login data:',
