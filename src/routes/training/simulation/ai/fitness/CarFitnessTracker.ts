@@ -5,6 +5,9 @@ import type { SensorReading } from '../../types/sensors'
 import { TrackDistanceTracker } from './TrackDistanceTracker'
 
 export class CarFitnessTracker {
+    public getCurrentWaypointIndex(): number {
+        return this.currentWaypointIndex;
+    }
     private steeringHistory: number[] = [];
     private steeringPenaltyAccumulator: number = 0;
     private metrics: FitnessMetrics
@@ -147,19 +150,28 @@ export class CarFitnessTracker {
             sensorReadings.leftCenter +
             sensorReadings.center +
             sensorReadings.rightCenter +
-            sensorReadings.right
+            sensorReadings.right;
 
-        const sensorBonus = (sensorSum / 5) * 0.03
-        this.sensorBonusAccumulator += sensorBonus
+        // Bonus por sensores despejados
+        const sensorBonus = (sensorSum / 5) * 0.04;
+        this.sensorBonusAccumulator += sensorBonus;
 
-        // Bonus for keeping center sensor clear (good track following)
+        // Bonus por mantener el sensor central despejado (seguir pista)
         if (sensorReadings.center > 0.8) {
-            this.sensorBonusAccumulator += 0.02
+            this.sensorBonusAccumulator += 0.08;
         }
 
-        // Bonus for all sensors showing clear path
+        // Penalización si los sensores laterales detectan muro
+        if (sensorReadings.left < 0.2) {
+            this.sensorBonusAccumulator -= 0.05;
+        }
+        if (sensorReadings.right < 0.2) {
+            this.sensorBonusAccumulator -= 0.05;
+        }
+
+        // Bonus por todos los sensores despejados
         if (sensorSum > 4.0) {
-            this.sensorBonusAccumulator += 0.01
+            this.sensorBonusAccumulator += 0.02;
         }
     }
 
@@ -173,14 +185,13 @@ export class CarFitnessTracker {
                 Math.pow(position.x - currentWaypoint.x, 2) +
                     Math.pow(position.z - currentWaypoint.z, 2)
             )
-            const waypointRadius = Math.max(currentWaypoint.radius || 3.0, 4.0)
+            const waypointRadius = Math.max(5.0)
 
             if (distance < waypointRadius) {
                 const now = Date.now()
                 this.waypointTimes.push(now - this.startTime)
                 this.lastProgressTime = now
 
-                // Give points for reaching waypoints (except first one)
                 if (this.currentWaypointIndex > 0) {
                     this.metrics.checkpointsReached++
                     console.log(
@@ -229,15 +240,15 @@ export class CarFitnessTracker {
         const sensorBonus = Math.min(this.sensorBonusAccumulator, 8);
 
         // Waypoint rewards
-        const waypointPoints = this.metrics.checkpointsReached * 120;
-        const waypointBonus = Math.pow(this.metrics.checkpointsReached, 2) * 20;
+    const waypointPoints = this.metrics.checkpointsReached * 180;
+    const waypointBonus = Math.pow(this.metrics.checkpointsReached, 2) * 40;
 
         // Lap completion bonus
         const lapBonus = this.lapCompleted ? Math.max(120 - timeAlive / 2, 40) : 0;
 
         // Penalties
         const backwardPenalty = this.metrics.backwardMovement * -1.2;
-        const collisionPenalty = this.metrics.collisions * -8;
+    const collisionPenalty = this.metrics.collisions * -30;
         const inactivityPenalty = this.getInactivityPenalty() * 2;
 
         let totalFitness =

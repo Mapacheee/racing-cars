@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode, type JSX } from 'react'
-import { Population } from '../ai/neat/Population'
-import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig'
+import { Neat, methods } from 'neataptic';
 import { useRaceReset } from '../../../../lib/contexts/RaceResetContext'
 import type { FitnessMetrics } from '../types/neat'
 
@@ -19,7 +18,7 @@ interface NEATTrainingContextType {
     isTraining: boolean
     carStates: Map<string, CarState>
     bestFitness: number
-    population: Population
+    neatRef: React.MutableRefObject<any>
     simulationActive: React.MutableRefObject<boolean>
 
     // Funciones
@@ -57,8 +56,27 @@ export function NEATTrainingProvider({ children, onReset }: NEATTrainingProvider
     const [generation, setGeneration] = useState(1)
     const [isTraining, setIsTraining] = useState(false)
     const [carStates, setCarStates] = useState<Map<string, CarState>>(new Map())
-    const [population] = useState(() => new Population(DEFAULT_NEAT_CONFIG))
     const [bestFitness, setBestFitness] = useState(0)
+
+    const neatRef = useRef<any>(null);
+    if (!neatRef.current) {
+        neatRef.current = new Neat(
+            6, // número de inputs
+            3, // número de outputs
+            null,
+            {
+                mutation: methods.mutation.ALL,
+                popsize: 20,
+                mutationRate: 0.6, 
+                elitism: 3, 
+            }
+        );
+        neatRef.current.population.forEach((network: any) => {
+            for (let i = 0; i < 3; i++) {
+                network.mutate(methods.mutation.ALL[Math.floor(Math.random() * methods.mutation.ALL.length)]);
+            }
+        });
+    }
 
     // Hook para manejar reset de la escena
     const { triggerReset } = useRaceReset()
@@ -142,65 +160,40 @@ export function NEATTrainingProvider({ children, onReset }: NEATTrainingProvider
 
     const evolveToNextGeneration = useCallback(() => {
         console.log('🔥 EVOLVE BUTTON CLICKED! Current generation:', generation)
-        performEvolution()
-    }, [isTraining, carStates.size, generation])
-    
-    const performEvolution = useCallback(() => {
-        const carStatesArray = Array.from(carStates.values())
-        
-        if (carStatesArray.length === 0) {
-            console.warn('⚠️ No fitness data available for evolution')
-            return
-        }
-
-        console.log(`🧬 Starting evolution with ${carStatesArray.length} cars evaluated`)
-
-        carStatesArray.forEach(carState => {
-            const genomes = population.getGenomes()
-            const genomeIndex = parseInt(carState.id.split('-')[1]) - 1
-            
-            if (genomeIndex >= 0 && genomeIndex < genomes.length) {
-                genomes[genomeIndex].fitness = carState.fitness
-            }
-        })
-
-        population.evolve()
-        
-        const statsAfter = population.getStats()
-        console.log(`🎉 Evolution complete! Generation ${statsAfter.generation + 1}`)
-
-        const currentBest = population.getStats().bestFitness
-        setBestFitness(prev => Math.max(prev, currentBest))
-
-        const populationGen = population.getGeneration()
-        const newGeneration = populationGen + 1
-        console.log(`🔄 Setting UI generation from ${generation} to ${newGeneration}`)
-        setGeneration(newGeneration)
-        
-        setCarStates(new Map())
-        setIsTraining(false)
-        simulationActive.current = false
-
-        setTimeout(() => {
-            triggerReset()
-            console.log(`✅ Generation ${newGeneration} ready with evolved genomes! Waiting for user to start training.`)
-        }, 50)
-    }, [carStates, bestFitness, population, generation])
+        // 1. Asignar fitness a cada red
+        const carStatesArray = Array.from(carStates.values());
+        neatRef.current.population.forEach((network: any, i: number) => {
+            const carState = carStatesArray[i];
+            network.score = carState ? carState.fitness : 0;
+        });
+        // 2. Evolucionar la población
+        neatRef.current.evolve().then(() => {
+            setGeneration(g => g + 1);
+            setCarStates(new Map());
+            setIsTraining(false);
+            simulationActive.current = false;
+            setTimeout(() => {
+                triggerReset();
+                simulationActive.current = true;
+                console.log(`✅ Generation ${generation + 1} ready with evolved networks! Waiting for user to start training.`);
+            }, 50);
+        });
+    }, [carStates, generation, triggerReset]);
 
     const value: NEATTrainingContextType = {
-        generation,
-        isTraining,
-        carStates,
-        bestFitness,
-        population,
-        simulationActive,
-        handleFitnessUpdate,
-        handleCarElimination,
-        areAllCarsEliminated,
-        startTraining,
-        stopTraining,
-        restartGeneration,
-        evolveToNextGeneration,
+    generation,
+    isTraining,
+    carStates,
+    bestFitness,
+    neatRef,
+    simulationActive,
+    handleFitnessUpdate,
+    handleCarElimination,
+    areAllCarsEliminated,
+    startTraining,
+    stopTraining,
+    restartGeneration,
+    evolveToNextGeneration,
     }
 
     return (
