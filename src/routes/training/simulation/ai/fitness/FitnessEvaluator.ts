@@ -8,7 +8,6 @@ export class FitnessEvaluator {
         // Normalizar métricas
         const normalizedDistance = Math.min(metrics.distanceTraveled / maxValues.distance, 1)
         const normalizedSpeed = Math.min(metrics.averageSpeed / maxValues.speed, 1)
-        const normalizedTime = Math.min(metrics.timeAlive / maxValues.time, 1)
         const normalizedCheckpoints = Math.min(metrics.checkpointsReached / maxValues.checkpoints, 1)
         
         // Calcular fitness base
@@ -19,9 +18,6 @@ export class FitnessEvaluator {
         
         // Recompensar velocidad promedio
         fitness += normalizedSpeed * weights.speed
-        
-        // Recompensar tiempo de supervivencia
-        fitness += normalizedTime * weights.time
         
         // Recompensar checkpoints alcanzados (más importante)
         fitness += normalizedCheckpoints * weights.checkpoints
