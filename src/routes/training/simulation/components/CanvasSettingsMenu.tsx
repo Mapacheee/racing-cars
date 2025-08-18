@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'
 import { TRACKS, regenerateMainTrack } from '../../../../lib/racing/track'
-import { getPopulationSize } from '../ai/neat/NEATConfig'
+import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig'
 import { useFpsCounter } from '../../../../lib/racing/hooks/useFpsCounter'
 
 export default function CanvasSettingsMenu(): JSX.Element {
@@ -18,8 +18,6 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const neatContext = useNEATTraining()
     const navigate = useNavigate()
-    const [showRestartModal, setShowRestartModal] = useState(false)
-    const [showStopModal, setShowStopModal] = useState(false)
     const { fps, getFpsColor } = useFpsCounter()
 
     if (!neatContext) {
@@ -45,10 +43,8 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const track = TRACKS['main_circuit']
 
-    const totalCars = getPopulationSize() // Obtener dinámicamente de la configuración NEAT
-    const aliveCars =
-        totalCars -
-        Array.from(carStates.values()).filter(car => car.isEliminated).length
+    const totalCars = DEFAULT_NEAT_CONFIG.populationSize;
+    const aliveCars = totalCars - Array.from(carStates.values()).filter(car => car.isEliminated).length;
 
     useEffect(() => {
         document.title = 'Entrenamiento de la ia - Carrera neuronal 🏎️🧠'
@@ -70,30 +66,6 @@ export default function CanvasSettingsMenu(): JSX.Element {
         // The useTrackUpdates hook in CarScene will detect the change and trigger re-render
     }
 
-    const handleRestartConfirm = () => {
-        restartGeneration()
-        setShowRestartModal(false)
-    }
-
-    const handleRestartCancel = () => {
-        setShowRestartModal(false)
-    }
-
-    const handleStopAndRetrain = () => {
-        stopTraining()
-        restartGeneration()
-        setShowStopModal(false)
-    }
-
-    const handleStopAndEvolve = () => {
-        stopTraining()
-        evolveToNextGeneration()
-        setShowStopModal(false)
-    }
-
-    const handleStopCancel = () => {
-        setShowStopModal(false)
-    }
 
     return (
         <div className="absolute top-4 left-4 bg-white/90 rounded shadow-lg p-4 z-50 min-w-[250px]">
@@ -169,7 +141,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
                         </button>
                     ) : (
                         <button
-                            onClick={() => setShowStopModal(true)}
+                            onClick={stopTraining}
                             className="w-auto px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors"
                         >
                             Detener
@@ -222,15 +194,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     </div>
                 )}
 
-                {/* Botón de empezar desde cero */}
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                    <button
-                        onClick={() => setShowRestartModal(true)}
-                        className="w-full bg-gray-600 hover:bg-gray-700 text-white py-1 px-2 rounded text-xs transition-colors"
-                    >
-                        Empezar desde cero
-                    </button>
-                </div>
+        
             </div>
 
             {/* Sección ajustes existente */}
@@ -269,15 +233,9 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     ver paredes
                 </label>
 
-                {/* ...existing code... */}
-
                 <div className="border-t pt-2 mt-2">
-                    <div className="text-xs font-medium text-gray-700 mb-1">
-                        Pista: {track.name}
-                    </div>
                     <div className="text-xs text-gray-500 mb-2">
                         {track.waypoints.length} Puntos •{' '}
-                        {Math.round(track.length)}m •{' '}
                         <span className={getFpsColor(fps)}>{fps}</span> FPS
                     </div>
                     <button
@@ -289,70 +247,6 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     </button>
                 </div>
             </div>
-
-            {/* Modal de confirmación para reiniciar */}
-            {showRestartModal && (
-                <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
-                    <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                            ¿Estás seguro?
-                        </h3>
-                        <p className="text-gray-600 mb-6">
-                            El entrenamiento de la IA va a empezar desde el
-                            principio. Se perderá todo el progreso de la
-                            generación actual.
-                        </p>
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={handleRestartCancel}
-                                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleRestartConfirm}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                            >
-                                Sí, reiniciar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de confirmación para detener */}
-            {showStopModal && (
-                <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
-                    <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                            Entrenamiento detenido
-                        </h3>
-                        <p className="text-gray-600 mb-6">
-                            ¿Qué quieres hacer con esta generación?
-                        </p>
-                        <div className="flex flex-col gap-3">
-                            <button
-                                onClick={handleStopAndRetrain}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                            >
-                                Entrenar de nuevo esta generación
-                            </button>
-                            <button
-                                onClick={handleStopAndEvolve}
-                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
-                            >
-                                Evolucionar a la siguiente generación
-                            </button>
-                            <button
-                                onClick={handleStopCancel}
-                                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }
