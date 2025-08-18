@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, type JSX } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'

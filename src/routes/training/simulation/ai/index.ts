@@ -1,8 +1,3 @@
-// NEAT Core Classes
-export { Network } from './neat/Network'
-export { GenomeBuilder, GenomeUtils } from './neat/Genome'
-export { Mutations } from './neat/Mutations'
-export { Population } from './neat/Population'
 export {
     DEFAULT_NEAT_CONFIG,
     FITNESS_CONFIG,
