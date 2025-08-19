@@ -224,7 +224,7 @@ export default function AICar({
         DEFAULT_SENSOR_CONFIG
     );
 
-    const sensorAngleOffset = ((2 * Math.PI)) - (carData.rotation || 0);
+    const sensorAngleOffset = ((2 * Math.PI)) - (carData.rotation || 0)
 
     // Renderizado del auto y sensores
     return (

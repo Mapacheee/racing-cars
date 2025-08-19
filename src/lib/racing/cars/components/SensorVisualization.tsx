@@ -21,17 +21,17 @@ export default function SensorVisualization({
     carRotation,
     sensorReadings,
     config,
+    visualConfig = {},
     showCollisions = true,
     visible = true,
     walls = [] 
 }: SensorVisualizationProps & { walls?: any[] }) {
     const [showSensors, setShowSensors] = useState(false);
-
     useEffect(() => {
         setShowSensors(false);
         const timer = setTimeout(() => setShowSensors(true), 1000);
         return () => clearTimeout(timer);
-    }, []);
+    }, [carPosition.x, carPosition.y, carPosition.z]);
     const basePosition = new Vector3(-0.5, 0.2, -1);
 
 
@@ -44,9 +44,10 @@ export default function SensorVisualization({
             { reading: sensorReadings.rightCenter, angle: config.angles.rightCenter, key: 'rightCenter' },
             { reading: sensorReadings.right, angle: config.angles.right, key: 'right' }
         ];
+        const sensorAngleOffset = typeof visualConfig.sensorAngleOffset === 'number' ? visualConfig.sensorAngleOffset : Math.PI / 2;
         return sensors.map(sensor => {
             const sensorAngleRad = (sensor.angle * Math.PI) / 180;
-            const absoluteAngle = carRotation + sensorAngleRad + Math.PI / 2;
+            const absoluteAngle = carRotation + sensorAngleRad + sensorAngleOffset;
             const start = basePosition.clone();
             const maxDistance = config.maxDistance;
             const end = basePosition.clone().add(new Vector3(
@@ -57,9 +58,9 @@ export default function SensorVisualization({
             let hitEnd = end;
             if (walls && walls.length > 0) {
                 for (const wall of walls) {
-                    const denom = (start.x - end.x) * (wall.start.z - wall.end.z) - (start.z - end.z) * (wall.start.x - wall.end.x);
+                    const denom = (start.x - end.x) * (wall.start.z - wall.end.z) - (start.z - end.z) * (start.x - wall.end.x);
                     if (Math.abs(denom) < 1e-10) continue;
-                    const t = ((start.x - wall.start.x) * (wall.start.z - wall.end.z) - (start.z - wall.start.z) * (wall.start.x - wall.end.x)) / denom;
+                    const t = ((start.x - wall.start.x) * (wall.start.z - wall.end.z) - (start.z - wall.start.z) * (start.x - wall.end.x)) / denom;
                     const u = -((start.x - end.x) * (start.z - wall.start.z) - (start.z - end.z) * (start.x - wall.start.x)) / denom;
                     if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
                         hitEnd = new Vector3(
@@ -86,7 +87,7 @@ export default function SensorVisualization({
                 opacity
             };
         });
-    }, [carPosition, carRotation, sensorReadings, config, visible, basePosition, showCollisions, walls]);
+    }, [carPosition, carRotation, sensorReadings, config, visible, basePosition, showCollisions, walls, visualConfig]);
 
     if (!visible || !showSensors) return null
 
