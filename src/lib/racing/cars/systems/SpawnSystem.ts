@@ -19,14 +19,14 @@ export function calculateSpawnTransform(track: Track): {
     const secondWaypoint = track.waypoints[1]
 
     const position: [number, number, number] = [
-        firstWaypoint.x -1,
+        firstWaypoint.x,
         -0.5,
         firstWaypoint.z,
     ]
 
-    const dx = secondWaypoint.x - firstWaypoint.x
-    const dz = secondWaypoint.z - firstWaypoint.z
-    const rotation = Math.atan2(dx, dz)
+    const dx = secondWaypoint.x - firstWaypoint.x;
+    const dz = secondWaypoint.z - firstWaypoint.z;
+    const rotation = Math.atan2(dx, dz) + Math.PI / 10;
 
     return { position, rotation }
 }
