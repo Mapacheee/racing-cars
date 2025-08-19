@@ -77,4 +77,5 @@ export interface SensorVisualizationConfig {
         noObstacle: string
         obstacle: string
     }
+    sensorAngleOffset?: number;
 }

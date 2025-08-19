@@ -224,6 +224,8 @@ export default function AICar({
         DEFAULT_SENSOR_CONFIG
     );
 
+    const sensorAngleOffset = ((2 * Math.PI)) - (carData.rotation || 0);
+
     // Renderizado del auto y sensores
     return (
         <BaseCar3D
@@ -247,9 +249,10 @@ export default function AICar({
                 carPosition={realTimeCarData.position}
                 carRotation={realTimeCarData.heading}
                 sensorReadings={currentSensorReadings}
-                config={DEFAULT_SENSOR_CONFIG}  
+                config={DEFAULT_SENSOR_CONFIG}
                 showCollisions={showCollisions}
                 visible={true}
+                visualConfig={{ sensorAngleOffset }}
             />
             {showCollisions && (
                 <mesh position={[-0.5, 0.2, -1]}>
