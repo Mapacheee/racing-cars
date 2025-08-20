@@ -1,4 +1,4 @@
-import { Network } from './neat/Network'
+import { Network } from 'neataptic'
 import type { Genome } from '../types/neat'
 
 type ControlActions = {
@@ -12,7 +12,7 @@ type ControlActions = {
 import { SimpleCarPhysics } from './utils/SimpleCarPhysics';
 
 export class NEATCarController {
-    private network: Network
+    private network: any
     private genome: Genome
     private startTime: number
     private isControlActive: boolean

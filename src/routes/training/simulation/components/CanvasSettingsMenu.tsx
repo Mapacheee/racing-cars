@@ -1,12 +1,14 @@
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, type JSX } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
+import type { Track } from '../../../../lib/racing/track/types'
 import { useNavigate } from 'react-router-dom'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'
 import { TRACKS, regenerateMainTrack } from '../../../../lib/racing/track'
-import { getPopulationSize } from '../ai/neat/NEATConfig'
+import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig'
 import { useFpsCounter } from '../../../../lib/racing/hooks/useFpsCounter'
 
-export default function CanvasSettingsMenu(): JSX.Element {
+export default function CanvasSettingsMenu({ setTrack }: { setTrack: Dispatch<SetStateAction<Track>> }): JSX.Element {
     const {
         showCollisions,
         setShowCollisions,
@@ -18,9 +20,12 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const neatContext = useNEATTraining()
     const navigate = useNavigate()
+<<<<<<< HEAD
     const [showRestartModal, setShowRestartModal] = useState(false)
     const [showStopModal, setShowStopModal] = useState(false)
     const [showResetAllModal, setShowResetAllModal] = useState(false)
+=======
+>>>>>>> 5bc5af43e6741edd7bb58d72e03ca9a61e4e85a8
     const { fps, getFpsColor } = useFpsCounter()
 
     if (!neatContext) {
@@ -47,10 +52,8 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const track = TRACKS['main_circuit']
 
-    const totalCars = getPopulationSize() // Obtener dinámicamente de la configuración NEAT
-    const aliveCars =
-        totalCars -
-        Array.from(carStates.values()).filter(car => car.isEliminated).length
+    const totalCars = DEFAULT_NEAT_CONFIG.populationSize;
+    const aliveCars = totalCars - Array.from(carStates.values()).filter(car => car.isEliminated).length;
 
     useEffect(() => {
         document.title = 'Entrenamiento de la ia - Carrera neuronal 🏎️🧠'
@@ -62,34 +65,18 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const handleGenerateNewTrack = () => {
         const seed = Math.floor(Math.random() * 1000000)
+<<<<<<< HEAD
         regenerateMainTrack(seed)
+=======
+        const newTrack = regenerateMainTrack(seed)
+        setTrack(newTrack)
+        import('../utils/TrackUpdateEvent').then(module => {
+            module.trackUpdateEvents.notifyTrackUpdate()
+        })
+>>>>>>> 5bc5af43e6741edd7bb58d72e03ca9a61e4e85a8
         console.log(`🔄 Generated new track with seed: ${seed}`)
     }
 
-    const handleRestartConfirm = () => {
-        restartGeneration()
-        setShowRestartModal(false)
-    }
-
-    const handleRestartCancel = () => {
-        setShowRestartModal(false)
-    }
-
-    const handleStopAndRetrain = () => {
-        stopTraining()
-        restartGeneration()
-        setShowStopModal(false)
-    }
-
-    const handleStopAndEvolve = () => {
-        stopTraining()
-        evolveToNextGeneration()
-        setShowStopModal(false)
-    }
-
-    const handleStopCancel = () => {
-        setShowStopModal(false)
-    }
 
     const handleResetAllConfirm = async () => {
         try {
@@ -180,7 +167,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
                         </button>
                     ) : (
                         <button
-                            onClick={() => setShowStopModal(true)}
+                            onClick={stopTraining}
                             className="w-auto px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors"
                         >
                             Detener
@@ -233,6 +220,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     </div>
                 )}
 
+<<<<<<< HEAD
                 {/* Botón de empezar desde cero */}
                 <div className="mt-3 pt-3 border-t border-gray-200">
                     <button
@@ -242,6 +230,9 @@ export default function CanvasSettingsMenu(): JSX.Element {
                         Empezar desde cero
                     </button>
                 </div>
+=======
+        
+>>>>>>> 5bc5af43e6741edd7bb58d72e03ca9a61e4e85a8
             </div>
 
             {/* Sección ajustes existente */}
@@ -280,15 +271,9 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     ver paredes
                 </label>
 
-                {/* ...existing code... */}
-
                 <div className="border-t pt-2 mt-2">
-                    <div className="text-xs font-medium text-gray-700 mb-1">
-                        Pista: {track.name}
-                    </div>
                     <div className="text-xs text-gray-500 mb-2">
                         {track.waypoints.length} Puntos •{' '}
-                        {Math.round(track.length)}m •{' '}
                         <span className={getFpsColor(fps)}>{fps}</span> FPS
                     </div>
                     <button
@@ -300,6 +285,7 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     </button>
                 </div>
             </div>
+<<<<<<< HEAD
 
             {/* Modal de confirmación para reiniciar */}
             {showRestartModal && (
@@ -396,6 +382,8 @@ export default function CanvasSettingsMenu(): JSX.Element {
                     </div>
                 </div>
             )}
+=======
+>>>>>>> 5bc5af43e6741edd7bb58d72e03ca9a61e4e85a8
         </div>
     )
 }

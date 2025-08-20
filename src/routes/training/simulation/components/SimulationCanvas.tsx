@@ -1,9 +1,10 @@
 import type { JSX } from 'react'
+import type { Track } from '../../../../lib/racing/track/types'
 import { Canvas } from '@react-three/fiber'
 import { CAMERA_CONFIG } from '../config/rendering'
 import CarScene from '../scene/CarScene'
 
-export default function SimulationCanvas(): JSX.Element {
+export default function SimulationCanvas({ track }: { track: Track }): JSX.Element {
     return (
         <Canvas
             camera={{ 
@@ -13,7 +14,7 @@ export default function SimulationCanvas(): JSX.Element {
             style={{ display: 'block', userSelect: 'none' }}
             className="no-drag"
         >
-            <CarScene />
+            <CarScene track={track} />
         </Canvas>
     )
 }

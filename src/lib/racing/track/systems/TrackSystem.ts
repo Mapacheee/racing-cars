@@ -18,14 +18,12 @@ export const TRACK_GENERATION = {
     segmentsPerSection: 20,
     wallLength: 4,
     minimumWaypoints: 8,
-    // new spline settings - SHORTER TRACKS
     trackWidth: ROAD_GEOMETRY.width + 2, // Much smaller track width for closer walls
     baseRadius: 40, // Reduced from 80 to 40 for shorter tracks
     radiusVariation: 20, // Reduced from 50 to 30 for tighter curves
     numControlPoints: 12, // Reduced from 12 to 8 for shorter tracks
 } as const
 
-// Generate main track using spline system
 function generateMainTrack(): Track {
     const controlPoints = generateProceduralControlPoints({
         numControlPoints: TRACK_GENERATION.numControlPoints,
@@ -33,7 +31,7 @@ function generateMainTrack(): Track {
         radiusVariation: TRACK_GENERATION.radiusVariation,
         centerX: 0,
         centerY: 0,
-        seed: 12345, // fixed seed for reproducible main track
+        seed: 235325,
     })
 
     const splineTrack = generateSplineRaceTrack(
@@ -82,7 +80,10 @@ export function generateRandomTrack(
         roadPieceLength: ROAD_GEOMETRY.length,
     })
 
-    return splineTrackToTrack(splineTrack, id, name, controlPoints)
+    const track = splineTrackToTrack(splineTrack, id, name, controlPoints)
+    TRACKS[id] = track
+    TRACKS['current'] = track
+    return track
 }
 
 // main track definition - generated procedurally
@@ -114,12 +115,15 @@ export function regenerateMainTrack(seed?: number): Track {
         }
     )
 
-    const newTrack = splineTrackToTrack(
-        splineTrack,
-        'main_circuit',
-        'Main Circuit',
-        controlPoints
-    )
+    const newTrack = {
+        ...splineTrackToTrack(
+            splineTrack,
+            'main_circuit',
+            'Main Circuit',
+            controlPoints
+        ),
+        seed: seed ?? 12345,
+    }
 
     // Update the tracks registry
     TRACKS['main_circuit'] = newTrack

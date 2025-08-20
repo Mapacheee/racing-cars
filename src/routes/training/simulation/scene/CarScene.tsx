@@ -1,19 +1,19 @@
 import { Suspense, useState, useEffect } from 'react'
+import type { Track } from '../../../../lib/racing/track/types'
 import type { JSX } from 'react'
 import AICar from '../entities/AICar'
 import { TrackScene } from '../../../../lib/racing/track'
-import { TRACKS } from '../../../../lib/racing/track'
 import { generateAICars } from '../systems/SpawnSystem'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useRaceReset } from '../../../../lib/contexts/RaceResetContext'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'
 import { useTrackUpdates } from '../utils/TrackUpdateEvent'
 
-export default function CarScene(): JSX.Element {
+export default function CarScene({ track }: { track: Track }): JSX.Element {
     const { showWaypoints, showWalls } = useCanvasSettings()
     const { resetCounter } = useRaceReset()
     const [, forceUpdate] = useState({})
-    const trackUpdateKey = useTrackUpdates() // Listen for track updates
+    const trackUpdateKey = useTrackUpdates()
     const neatContext = useNEATTraining()
 
     if (!neatContext) {
@@ -25,58 +25,26 @@ export default function CarScene(): JSX.Element {
         carStates,
         handleFitnessUpdate,
         handleCarElimination,
-        population,
+        neatRef,
     } = neatContext
 
-    // regenerate cars when generation changes
-    const [aiCars, setAiCars] = useState(() => {
-        const initialGenomes = population.getGenomes().slice(0, 20)
-        return generateAICars({
-            trackId: 'main_circuit',
-            carCount: 20,
-            colors: [
-                'red',
-                'blue',
-                'green',
-                'yellow',
-                'purple',
-                'orange',
-                'pink',
-                'cyan',
-                'magenta',
-                'lime',
-                'indigo',
-                'maroon',
-                'navy',
-                'olive',
-                'teal',
-                'silver',
-                'gold',
-                'coral',
-                'salmon',
-                'khaki',
-            ],
-            useNEAT: true,
-            generation: generation,
-            genomes: initialGenomes,
-        })
-    })
+    const [aiCars, setAiCars] = useState<any[]>([]);
 
-    const currentTrack = 'main_circuit'
-    // Get track fresh from TRACKS registry on each render to catch updates
-    const track = TRACKS[currentTrack]
+    const trackId = track?.id || 'main_circuit';
 
-    // Listen for track updates (this will be triggered by track regeneration)
     useEffect(() => {
-        // Track updates will cause re-render through trackUpdateKey
-        // This effect runs when trackUpdateKey changes
-    }, [resetCounter, trackUpdateKey])
-
-    // update cars when generation changes
-    useEffect(() => {
-        const allGenomes = population.getGenomes()
+        if (!track || !track.waypoints || track.waypoints.length < 2) return;
+        // Obtén el primer y segundo waypoint
+        const firstWaypoint = track.waypoints[0];
+        const secondWaypoint = track.waypoints[1];
+        // Calcula posición y rotación
+        const dx = secondWaypoint.x - firstWaypoint.x;
+        const dz = secondWaypoint.z - firstWaypoint.z;
+        const rotation = Math.atan2(dx, dz);
+        // Genera autos usando estos datos
+        const allGenomes = neatRef?.current?.population || [];
         const config: any = {
-            trackId: currentTrack,
+            trackId,
             carCount: 20,
             colors: [
                 'red',
@@ -103,12 +71,23 @@ export default function CarScene(): JSX.Element {
             useNEAT: true,
             generation: generation,
             genomes: allGenomes,
+            spawnOverride: {
+                position: [firstWaypoint.x, -0.5, firstWaypoint.z],
+                rotation,
+            },
+        };
+        let newCars = generateAICars(config);
+        if (config.spawnOverride) {
+            newCars = newCars.map((car: any) => ({
+                ...car,
+                position: config.spawnOverride.position,
+                rotation: config.spawnOverride.rotation,
+            }));
         }
+        setAiCars(newCars);
+        forceUpdate({});
+    }, [generation, trackId, trackUpdateKey, resetCounter, neatRef, track]);
 
-        const newCars = generateAICars(config)
-        setAiCars(newCars)
-        forceUpdate({})
-    }, [generation, currentTrack, population, resetCounter, trackUpdateKey])
 
     return (
         <TrackScene
