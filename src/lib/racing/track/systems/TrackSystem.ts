@@ -115,12 +115,15 @@ export function regenerateMainTrack(seed?: number): Track {
         }
     )
 
-    const newTrack = splineTrackToTrack(
-        splineTrack,
-        'main_circuit',
-        'Main Circuit',
-        controlPoints
-    )
+    const newTrack = {
+        ...splineTrackToTrack(
+            splineTrack,
+            'main_circuit',
+            'Main Circuit',
+            controlPoints
+        ),
+        seed: seed ?? 12345,
+    }
 
     // Update the tracks registry
     TRACKS['main_circuit'] = newTrack

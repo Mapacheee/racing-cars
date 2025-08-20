@@ -30,6 +30,7 @@ export interface Track {
         centralPath: { x: number; y: number }[]
         trackWidth: number
     }
+    seed?: number
 }
 
 export interface TrackGeometry {

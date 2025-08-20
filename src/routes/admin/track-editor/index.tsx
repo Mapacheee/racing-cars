@@ -14,6 +14,30 @@ function TrackEditorControls({ setTrack, track }: { setTrack: (track: Track) => 
     const navigate = useNavigate();
     const settings = React.useContext(CanvasSettingsContext)
     if (!settings) return null
+    const [socket, setSocket] = React.useState<any>(null);
+    React.useEffect(() => {
+        import('socket.io-client').then(({ io }) => {
+            const s = io('/racing-stream', { autoConnect: true });
+            setSocket(s);
+        });
+        return () => {
+            if (socket) socket.disconnect();
+        };
+    }, []);
+
+    const handleSaveAndReturn = () => {
+        if (socket && track?.seed !== undefined) {
+            socket.emit('setTrackSeed', {
+                roomId: 'main',
+                seed: track.seed,
+            });
+            socket.on('error', (data: any) => {
+                alert('Error al guardar la seed: ' + data.message);
+            });
+        }
+        navigate('/admin/menu');
+    };
+
     return (
         <div className="absolute top-4 left-4 bg-white/90 rounded shadow-lg p-4 z-50 min-w-[250px]">
             <h3 className="font-semibold text-gray-700 text-sm mb-3">Editor de pista</h3>
@@ -28,10 +52,7 @@ function TrackEditorControls({ setTrack, track }: { setTrack: (track: Track) => 
                 Generar nueva pista
             </button>
             <button
-                onClick={() => {
-                    // code to send track to back here
-                    navigate('/admin/menu')
-                }}
+                onClick={handleSaveAndReturn}
                 className="w-full px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs mb-2"
             >
                 Guardar y volver
