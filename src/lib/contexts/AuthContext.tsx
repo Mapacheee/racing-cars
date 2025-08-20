@@ -29,6 +29,7 @@ function setAuthCookies(data: User, role: 'player' | 'admin'): void {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// TODO: Create PlayerAuthContext and AdminAuthContext to separate implementation logic
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [auth, setAuth] = useState<User | null>(null)
     const [role, setRole] = useState<'player' | 'admin' | null>(null)
