@@ -1,16 +1,18 @@
 import { useState, useCallback /*useEffect*/ } from 'react'
 import { useAuth } from '../../../../lib/contexts/AuthContext'
 import {
-    pushGeneration,
-    getLatestGeneration,
-    getGeneration,
-    resetAllGenerations as resetAllGenerationsAPI,
-    getGenerationStatistics,
-    exportGenomes as exportGenomesAPI,
+    tryPushGeneration,
+    tryGetLatestGeneration,
+    tryGetGeneration,
+    tryResetAllGenerations,
+    tryGetGenerationStatistics,
+    tryExportNetworks,
+    neatapticToBackend,
+    backendToNeataptic,
     type CreateAIModelDto,
     type AIModelResponse,
-} from '../services/aiModelsApi'
-import type { Genome, NEATConfig } from '../types/neat'
+    type NeatapticNetworkData,
+} from '../../../../lib/services/player/aiModels.service'
 import type { PlayerAuth } from '../../../../lib/types/auth'
 
 interface UseAIModelsOptions {
@@ -47,12 +49,12 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
         [options]
     )
 
-    // Save current generation to backend
+    // Save current generation to backend (updated for neataptic)
     const saveGeneration = useCallback(
         async (
             generationNumber: number,
-            genomes: Genome[],
-            config: NEATConfig
+            neatRef: any,
+            carStates: Map<string, { fitness: number }>
         ): Promise<AIModelResponse | null> => {
             if (!auth?.token) {
                 handleError(new Error('No authentication token available'))
@@ -61,12 +63,12 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
 
             setLoading(true)
             try {
-                const data: CreateAIModelDto = {
-                    neatGenomes: genomes,
-                    config,
-                }
+                const data: CreateAIModelDto = neatapticToBackend(
+                    neatRef,
+                    carStates
+                )
 
-                const result = await pushGeneration(auth.token, data)
+                const result = await tryPushGeneration(auth.token, data)
                 handleSuccess(
                     `Generation ${generationNumber} saved successfully`
                 )
@@ -91,7 +93,7 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
 
             setLoading(true)
             try {
-                const result = await getLatestGeneration(auth.token)
+                const result = await tryGetLatestGeneration(auth.token)
                 if (result) {
                     handleSuccess(
                         `Latest generation ${result.generationNumber} loaded`
@@ -117,7 +119,10 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
 
             setLoading(true)
             try {
-                const result = await getGeneration(auth.token, generationNumber)
+                const result = await tryGetGeneration(
+                    auth.token,
+                    generationNumber
+                )
                 handleSuccess(`Generation ${generationNumber} loaded`)
                 return result
             } catch (error) {
@@ -139,7 +144,7 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
 
         setLoading(true)
         try {
-            await resetAllGenerationsAPI(auth.token)
+            await tryResetAllGenerations(auth.token)
             handleSuccess('All generations reset successfully')
             return true
         } catch (error) {
@@ -159,7 +164,7 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
 
         setLoading(true)
         try {
-            const stats = await getGenerationStatistics(auth.token)
+            const stats = await tryGetGenerationStatistics(auth.token)
             handleSuccess('Statistics loaded')
             return stats
         } catch (error) {
@@ -180,7 +185,7 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
         }
 
         try {
-            const latest = await getLatestGeneration(auth.token)
+            const latest = await tryGetLatestGeneration(auth.token)
             return latest !== null
         } catch (error) {
             console.warn('Error checking for existing generations:', error)
@@ -188,8 +193,8 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
         }
     }, [auth])
 
-    // Export genomes
-    const exportGenomes = useCallback(
+    // Export networks (updated for neataptic)
+    const exportNetworks = useCallback(
         async (options: { generationNumber?: number; topN?: number } = {}) => {
             if (!auth?.token) {
                 handleError(new Error('No authentication token available'))
@@ -198,18 +203,18 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
 
             setLoading(true)
             try {
-                const blob = await exportGenomesAPI(auth.token, options)
+                const blob = await tryExportNetworks(auth.token, options)
 
                 const url = window.URL.createObjectURL(blob)
                 const link = document.createElement('a')
                 link.href = url
-                link.download = `neat-genomes-${options.generationNumber || 'latest'}.json`
+                link.download = `neat-networks-${options.generationNumber || 'latest'}.json`
                 document.body.appendChild(link)
                 link.click()
                 document.body.removeChild(link)
                 window.URL.revokeObjectURL(url)
 
-                handleSuccess('Genomes exported successfully')
+                handleSuccess('Networks exported successfully')
                 return true
             } catch (error) {
                 handleError(error as Error)
@@ -231,7 +236,11 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
         resetAllGenerations,
         getStatistics,
         hasAnyGenerations,
-        exportGenomes,
+        exportNetworks,
         clearError: () => setError(null),
+
+        // Conversion utilities
+        neatapticToBackend,
+        backendToNeataptic,
     }
 }

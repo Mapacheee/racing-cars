@@ -1,20 +1,52 @@
 import axios, { type AxiosInstance } from 'axios'
-import type { Genome, NEATConfig, Species } from '../types/neat'
+import type {
+    Genome,
+    NEATConfig,
+} from '../../../routes/training/simulation/types/neat'
 
 const API_URL: string = import.meta.env['VITE_API_URL']
+
+// Updated interfaces for neataptic integration
+export interface NeatapticNetworkData {
+    networkIndex: number
+    networkData: any // Serialized network from network.toJSON()
+    fitness: number // network.score
+    metadata?: {
+        nodes?: number
+        connections?: number
+        isElite?: boolean
+    }
+}
 
 export interface AIModelResponse {
     id: string
     generationNumber: number
-    neatGenomes: Genome[]
-    config: NEATConfig
-    bestGenome?: Genome
-    species?: Species[]
+    neatNetworks: NeatapticNetworkData[] // Changed from neatGenomes to neatNetworks
+    neatConfig: {
+        populationSize: number
+        mutationRate: number
+        elitism: number
+        inputNodes: number
+        outputNodes: number
+    }
+    bestNetwork?: NeatapticNetworkData // Changed from bestGenome
     createdAt: string
     playerId: string
 }
 
 export interface CreateAIModelDto {
+    neatNetworks: NeatapticNetworkData[] // Changed from neatGenomes to neatNetworks
+    neatConfig: {
+        populationSize: number
+        mutationRate: number
+        elitism: number
+        inputNodes: number
+        outputNodes: number
+    }
+}
+
+// Legacy interfaces for backward compatibility (if needed)
+export interface LegacyCreateAIModelDto {
     neatGenomes: Genome[]
     config: NEATConfig
 }
@@ -45,7 +77,7 @@ export interface FitnessProgression {
 export interface BestPerformer {
     generation: number
     fitness: number
-    genome: Genome
+    networkData: any // Changed from genome to networkData
     createdAt: string
 }
 
@@ -54,7 +86,7 @@ export interface ExportOptions {
     topN?: number
 }
 
-function createAuthenticatedClient(token: string): AxiosInstance {
+function tryCreateAuthenticatedClient(token: string): AxiosInstance {
     return axios.create({
         baseURL: `${API_URL}/ai-models`,
         headers: {
@@ -65,13 +97,92 @@ function createAuthenticatedClient(token: string): AxiosInstance {
     })
 }
 
+// Utility functions for neataptic conversion
+export function neatapticToBackend(
+    neatRef: any,
+    carStates: Map<string, { fitness: number }>
+): CreateAIModelDto {
+    const population = neatRef.population
+    const carStatesArray = Array.from(carStates.values())
+
+    const neatNetworks: NeatapticNetworkData[] = population.map(
+        (network: any, index: number) => {
+            const carState = carStatesArray[index]
+            const fitness = carState?.fitness || network.score || 0
+
+            return {
+                networkIndex: index,
+                networkData: network.toJSON(), // Neataptic serialization
+                fitness: fitness,
+                metadata: {
+                    nodes: network.nodes?.length || 0,
+                    connections: network.connections?.length || 0,
+                    isElite: index < (neatRef.elitism || 3), // Elite networks
+                },
+            }
+        }
+    )
+
+    return {
+        neatNetworks,
+        neatConfig: {
+            populationSize: neatRef.popsize || 20,
+            mutationRate: neatRef.mutationRate || 0.55,
+            elitism: neatRef.elitism || 3,
+            inputNodes: 6, // From current implementation
+            outputNodes: 3, // From current implementation
+        },
+    }
+}
+
+export async function backendToNeataptic(
+    response: AIModelResponse
+): Promise<any> {
+    // Dynamic import to avoid SSR issues
+    const { Neat, Network, methods } = await import('neataptic')
+
+    // Recreate Neat instance with the saved config
+    const config = response.neatConfig
+    const neat = new Neat(config.inputNodes, config.outputNodes, null, {
+        popsize: config.populationSize,
+        mutationRate: config.mutationRate,
+        elitism: config.elitism,
+        mutation: methods.mutation.ALL,
+    })
+
+    // Load networks from saved data
+    try {
+        neat.population = response.neatNetworks
+            .sort((a, b) => a.networkIndex - b.networkIndex)
+            .map(networkData => {
+                const network = Network.fromJSON(networkData.networkData)
+                network.score = networkData.fitness
+                return network
+            })
+    } catch (error) {
+        console.error('Error reconstructing networks from backend data:', error)
+        // Fallback: create new random population
+        neat.population.forEach((network: any) => {
+            for (let i = 0; i < 50; i++) {
+                network.mutate(
+                    methods.mutation.ALL[
+                        Math.floor(Math.random() * methods.mutation.ALL.length)
+                    ]
+                )
+            }
+        })
+    }
+
+    return neat
+}
+
 // Save a new generation
-export async function pushGeneration(
+export async function tryPushGeneration(
     token: string,
     data: CreateAIModelDto
 ): Promise<AIModelResponse> {
     try {
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         const response = await client.post<AIModelResponse>(
             '/generations',
             data
@@ -88,11 +199,11 @@ export async function pushGeneration(
 }
 
 // Get the latest generation
-export async function getLatestGeneration(
+export async function tryGetLatestGeneration(
     token: string
 ): Promise<AIModelResponse | null> {
     try {
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         const response = await client.get<AIModelResponse>(
             '/generations/latest'
         )
@@ -113,12 +224,12 @@ export async function getLatestGeneration(
 }
 
 // Get a specific generation
-export async function getGeneration(
+export async function tryGetGeneration(
     token: string,
     generationNumber: number
 ): Promise<AIModelResponse> {
     try {
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         const response = await client.get<AIModelResponse>(
             `/generations/${generationNumber}`
         )
@@ -134,7 +245,7 @@ export async function getGeneration(
 }
 
 // Get all generations with pagination
-export async function getAllGenerations(
+export async function tryGetAllGenerations(
     token: string,
     options: {
         page?: number
@@ -144,7 +255,7 @@ export async function getAllGenerations(
 ): Promise<PaginatedResponse<AIModelResponse>> {
     try {
         const { page = 1, limit = 10, sortOrder = 'DESC' } = options
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         const response = await client.get<PaginatedResponse<AIModelResponse>>(
             '/generations',
             {
@@ -163,9 +274,9 @@ export async function getAllGenerations(
 }
 
 // Reset all generations
-export async function resetAllGenerations(token: string): Promise<void> {
+export async function tryResetAllGenerations(token: string): Promise<void> {
     try {
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         await client.delete('/generations/reset')
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
@@ -178,12 +289,12 @@ export async function resetAllGenerations(token: string): Promise<void> {
 }
 
 // Delete a specific generation
-export async function deleteGeneration(
+export async function tryDeleteGeneration(
     token: string,
     generationNumber: number
 ): Promise<void> {
     try {
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         await client.delete(`/generations/${generationNumber}`)
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
@@ -196,11 +307,11 @@ export async function deleteGeneration(
 }
 
 // Get generation statistics
-export async function getGenerationStatistics(
+export async function tryGetGenerationStatistics(
     token: string
 ): Promise<GenerationStatistics> {
     try {
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         const response = await client.get<GenerationStatistics>('/statistics')
         return response.data
     } catch (error) {
@@ -214,11 +325,11 @@ export async function getGenerationStatistics(
 }
 
 // Get fitness progression over generations
-export async function getFitnessProgression(
+export async function tryGetFitnessProgression(
     token: string
 ): Promise<FitnessProgression[]> {
     try {
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         const response = await client.get<FitnessProgression[]>(
             '/statistics/fitness-progression'
         )
@@ -235,12 +346,12 @@ export async function getFitnessProgression(
 }
 
 // Get best performing generations
-export async function getBestPerformers(
+export async function tryGetBestPerformers(
     token: string,
     limit: number = 5
 ): Promise<BestPerformer[]> {
     try {
-        const client = createAuthenticatedClient(token)
+        const client = tryCreateAuthenticatedClient(token)
         const response = await client.get<BestPerformer[]>(
             '/statistics/best-performers',
             {
@@ -259,58 +370,60 @@ export async function getBestPerformers(
     }
 }
 
-// Get best genomes across all generations
-export async function getBestGenomes(
+// Get best networks across all generations
+export async function tryGetBestNetworks(
     token: string,
     limit: number = 10
-): Promise<Genome[]> {
+): Promise<NeatapticNetworkData[]> {
     try {
-        const client = createAuthenticatedClient(token)
-        const response = await client.get<Genome[]>('/genomes/best', {
-            params: { limit },
-        })
+        const client = tryCreateAuthenticatedClient(token)
+        const response = await client.get<NeatapticNetworkData[]>(
+            '/networks/best',
+            {
+                params: { limit },
+            }
+        )
         return response.data
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
             throw new Error(
-                error.response.data.message ||
-                    'Error al obtener mejores genomas'
+                error.response.data.message || 'Error al obtener mejores redes'
             )
         }
         throw new Error('Error al conectar con el servidor')
     }
 }
 
-// Get genomes from a specific generation
-export async function getGenomesFromGeneration(
+// Get networks from a specific generation
+export async function tryGetNetworksFromGeneration(
     token: string,
     generationNumber: number
-): Promise<Genome[]> {
+): Promise<NeatapticNetworkData[]> {
     try {
-        const client = createAuthenticatedClient(token)
-        const response = await client.get<Genome[]>(
-            `/genomes/generation/${generationNumber}`
+        const client = tryCreateAuthenticatedClient(token)
+        const response = await client.get<NeatapticNetworkData[]>(
+            `/networks/generation/${generationNumber}`
         )
         return response.data
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
             throw new Error(
                 error.response.data.message ||
-                    'Error al obtener genomas de la generación'
+                    'Error al obtener redes de la generación'
             )
         }
         throw new Error('Error al conectar con el servidor')
     }
 }
 
-// Export genomes (for downloading/sharing)
-export async function exportGenomes(
+// Export networks (for downloading/sharing)
+export async function tryExportNetworks(
     token: string,
     options: ExportOptions = {}
 ): Promise<Blob> {
     try {
-        const client = createAuthenticatedClient(token)
-        const response = await client.get('/genomes/export', {
+        const client = tryCreateAuthenticatedClient(token)
+        const response = await client.get('/networks/export', {
             params: options,
             responseType: 'blob',
         })
@@ -318,7 +431,7 @@ export async function exportGenomes(
     } catch (error) {
         if (axios.isAxiosError(error) && error.response) {
             throw new Error(
-                error.response.data.message || 'Error al exportar genomas'
+                error.response.data.message || 'Error al exportar redes'
             )
         }
         throw new Error('Error al conectar con el servidor')

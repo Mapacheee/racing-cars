@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'
 import { TRACKS, regenerateMainTrack } from '../../../../lib/racing/track'
-import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig'
+import { getPopulationSize } from '../ai/neat/NEATConfig'
 import { useFpsCounter } from '../../../../lib/racing/hooks/useFpsCounter'
 
 export default function CanvasSettingsMenu({
@@ -53,7 +53,7 @@ export default function CanvasSettingsMenu({
 
     const track = TRACKS['main_circuit']
 
-    const totalCars = DEFAULT_NEAT_CONFIG.populationSize
+    const totalCars = getPopulationSize() // Obtener dinámicamente de la configuración NEAT
     const aliveCars =
         totalCars -
         Array.from(carStates.values()).filter(car => car.isEliminated).length
@@ -190,7 +190,7 @@ export default function CanvasSettingsMenu({
                         </button>
                     ) : (
                         <button
-                            onClick={stopTraining}
+                            onClick={() => setShowStopModal(true)}
                             className="w-auto px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors"
                         >
                             Detener
@@ -291,8 +291,12 @@ export default function CanvasSettingsMenu({
                 </label>
 
                 <div className="border-t pt-2 mt-2">
+                    <div className="text-xs font-medium text-gray-700 mb-1">
+                        Pista: {track.name}
+                    </div>
                     <div className="text-xs text-gray-500 mb-2">
                         {track.waypoints.length} Puntos •{' '}
+                        {Math.round(track.length)}m •{' '}
                         <span className={getFpsColor(fps)}>{fps}</span> FPS
                     </div>
                     <button
