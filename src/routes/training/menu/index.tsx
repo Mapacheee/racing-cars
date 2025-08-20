@@ -24,7 +24,6 @@ export default function TrainingMenu() {
     useEffect(() => {
         document.title = 'Sala de Entrenamiento - Carrera neuronal 🏎️🧠'
 
-        // If already in a room, navigate to room page
         if (isInRoom && currentRoom) {
             navigate('/training/room')
         }
@@ -53,7 +52,6 @@ export default function TrainingMenu() {
         validateOnBlur: true,
     })
 
-    // Only allow numbers in room number
     const handleRoomNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/\D/g, '')
         roomFormik.setFieldValue('roomNumber', value)
@@ -165,7 +163,6 @@ export default function TrainingMenu() {
                     </form>
                 </div>
             </div>
-            {/* Logout Button Fixed to Lower Right */}
             <button
                 onClick={handleLogout}
                 className="fixed right-6 bottom-6 border-1 z-50 w-auto rounded-md px-4 py-3 font-medium  text-secondary hover:text-secondary shadow-none transition-colors focus:outline-none focus:ring-2 focus:ring-secondary bg-transparent border-secondary"

@@ -1,10 +1,4 @@
-import {
-    createContext,
-    useContext,
-    useEffect,
-    useState,
-    type ReactNode,
-} from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import Cookies from 'js-cookie'
 import type {
     AdminAuth,
@@ -41,11 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string>('')
 
-    useEffect(() => {
-        console.log('##### loading: ', isLoading)
-        console.log('##### auth: ', auth)
-    }, [isLoading])
-
     useState(() => {
         const initializeAuth = async () => {
             const adminCookie = Cookies.get('admin')
@@ -66,28 +55,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 try {
                     const playerData: User = JSON.parse(playerCookie)
 
-                    if ('aiGeneration' in playerData && playerData.token) {
-                        try {
-                            const freshProfile = await tryFetchPlayerProfile(
-                                playerData.token,
-                                playerData.username
-                            )
-                            const completePlayerData = {
-                                ...freshProfile,
-                                token: playerData.token,
-                            }
-                            setAuth(completePlayerData)
-                            setRole('player')
-                            setAuthCookies(completePlayerData, 'player')
-                        } catch (error) {
-                            // console.warn(
-                            //     'Failed to fetch fresh profile, using cookie data:',
-                            //     error
-                            // )
-                            setAuth(playerData)
-                            setRole('player')
+                    try {
+                        const freshProfile = await tryFetchPlayerProfile(
+                            playerData.token,
+                            playerData.username
+                        )
+                        const completePlayerData = {
+                            ...freshProfile,
+                            token: playerData.token,
                         }
-                    } else {
+                        setAuth(completePlayerData)
+                        setRole('player')
+                        setAuthCookies(completePlayerData, 'player')
+                    } catch (error) {
+                        console.warn(
+                            '!!!!! Failed to fetch fresh profile, using cookie data:',
+                            error
+                        )
                         setAuth(playerData)
                         setRole('player')
                     }

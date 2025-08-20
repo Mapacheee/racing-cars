@@ -18,13 +18,17 @@ function SimulationContent(): JSX.Element {
         return <LoadingScreen message="Inicializando contexto NEAT..." />
     }
 
-    const { isInitializing } = neatContext
+    const { isInitializing, isResetting } = neatContext
 
     return (
         <LoadingWrapper
-            isLoading={isInitializing}
-            message="Cargando datos de entrenamiento desde el servidor..."
-            minimumDisplayTime={1500} // 1.5 seconds minimum
+            isLoading={isInitializing || isResetting}
+            message={
+                isResetting
+                    ? 'Reseteando todas las generaciones y creando nueva...'
+                    : 'Cargando datos de entrenamiento desde el servidor...'
+            }
+            minimumDisplayTime={isResetting ? 2000 : 1500} // Longer display for reset
         >
             <>
                 <CanvasSettingsMenu />

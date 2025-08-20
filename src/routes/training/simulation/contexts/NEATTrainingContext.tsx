@@ -36,6 +36,7 @@ interface NEATTrainingContextType {
     isSaving: boolean
     isLoading: boolean
     isInitializing: boolean
+    isResetting: boolean
     backendError: string | null
 
     // Funciones
@@ -95,6 +96,9 @@ export function NEATTrainingProvider({
     const [population] = useState(() => new Population(DEFAULT_NEAT_CONFIG))
     const [bestFitness, setBestFitness] = useState(0)
     const [isInitializing, setIsInitializing] = useState(true)
+    const [isResetting, setIsResetting] = useState(false)
+    const [hasInitialized, setHasInitialized] = useState(false)
+    const initializationInProgress = useRef(false)
 
     const { triggerReset } = useRaceReset()
 
@@ -108,7 +112,8 @@ export function NEATTrainingProvider({
     }, [aiModels])
 
     // Hook for updating player profile in background
-    const { updateAiGeneration } = usePlayerProfileUpdates()
+    const { updateAiGeneration, getCurrentPlayerProfile } =
+        usePlayerProfileUpdates()
 
     const simulationActive = useRef(false)
 
@@ -210,6 +215,22 @@ export function NEATTrainingProvider({
             `🧬 Starting evolution with ${carStatesArray.length} cars evaluated`
         )
 
+        // Get current player profile to ensure we have the latest aiGeneration
+        try {
+            const currentProfile = await getCurrentPlayerProfile()
+            if (currentProfile && currentProfile.aiGeneration !== generation) {
+                console.log(
+                    `🔄 Updating generation from ${generation} to ${currentProfile.aiGeneration} based on player profile`
+                )
+                setGeneration(currentProfile.aiGeneration)
+            }
+        } catch (error) {
+            console.warn(
+                'Failed to get current player profile before evolution:',
+                error
+            )
+        }
+
         carStatesArray.forEach(carState => {
             const genomes = population.getGenomes()
             const genomeIndex = parseInt(carState.id.split('-')[1]) - 1
@@ -249,21 +270,55 @@ export function NEATTrainingProvider({
                 `✅ Generation ${newGeneration} ready with evolved genomes! Waiting for user to start training.`
             )
         }, 50)
-    }, [carStates, population, generation])
+    }, [
+        carStates,
+        population,
+        generation,
+        getCurrentPlayerProfile,
+        triggerReset,
+        aiModels,
+        updateAiGeneration,
+    ])
 
     // Backend functions
     const saveCurrentGeneration = useCallback(async () => {
+        // Get current player profile to ensure we're using the latest generation
+        let currentGeneration = generation
+        try {
+            const currentProfile = await getCurrentPlayerProfile()
+            if (currentProfile && currentProfile.aiGeneration > 0) {
+                currentGeneration = currentProfile.aiGeneration
+                if (currentGeneration !== generation) {
+                    console.log(
+                        `🔄 Updating generation from ${generation} to ${currentGeneration} based on player profile`
+                    )
+                    setGeneration(currentGeneration)
+                }
+            }
+        } catch (error) {
+            console.warn(
+                'Failed to get current player profile, using local generation:',
+                error
+            )
+        }
+
         const genomes = population.getGenomes()
         const config = DEFAULT_NEAT_CONFIG
 
-        await aiModels.saveGeneration(generation, genomes, config)
+        await aiModels.saveGeneration(currentGeneration, genomes, config)
 
         try {
-            await updateAiGeneration(generation)
+            await updateAiGeneration(currentGeneration)
         } catch (error) {
             console.warn('Failed to update player generation:', error)
         }
-    }, [generation, population, aiModels, updateAiGeneration])
+    }, [
+        generation,
+        population,
+        aiModels,
+        updateAiGeneration,
+        getCurrentPlayerProfile,
+    ])
 
     const loadLatestGeneration = useCallback(async () => {
         const latestData = await aiModels.loadLatestGeneration()
@@ -307,29 +362,70 @@ export function NEATTrainingProvider({
     )
 
     const resetAllSavedGenerations = useCallback(async () => {
-        const success = await aiModels.resetAllGenerations()
-        if (success) {
-            // Reset the population to initial state
-            population.resetToInitial()
-            setGeneration(1)
-            setBestFitness(0)
-            setCarStates(new Map())
+        console.log('🗑️ Starting complete reset of all AI generations...')
+        setIsResetting(true)
+        setIsInitializing(true)
+        setHasInitialized(false) // Allow reinitialization after reset
+        initializationInProgress.current = false // Reset the initialization flag
 
-            // Save the new first generation
-            const genomes = population.getGenomes()
-            const config = DEFAULT_NEAT_CONFIG
-            await aiModels.saveGeneration(1, genomes, config)
+        try {
+            // First, reset the backend
+            const success = await aiModels.resetAllGenerations()
 
-            // Update player's aiGeneration on server
-            try {
-                await updateAiGeneration(1)
-            } catch (error) {
-                console.warn('Failed to update player generation:', error)
+            if (success) {
+                console.log(
+                    '✅ Backend reset successful, resetting frontend state...'
+                )
+
+                // Reset the population to initial state
+                population.resetToInitial()
+                setGeneration(1)
+                setBestFitness(0)
+                setCarStates(new Map())
+
+                // Wait a moment to ensure backend reset is fully processed
+                await new Promise(resolve => setTimeout(resolve, 500))
+
+                // Save the new first generation
+                const genomes = population.getGenomes()
+                const config = DEFAULT_NEAT_CONFIG
+
+                console.log('💾 Saving new first generation to backend...')
+                const savedData = await aiModels.saveGeneration(
+                    1,
+                    genomes,
+                    config
+                )
+
+                if (savedData) {
+                    console.log('✅ New first generation saved successfully')
+
+                    // Update player's aiGeneration on server
+                    try {
+                        await updateAiGeneration(1)
+                        console.log('✅ Player generation updated to 1')
+                    } catch (error) {
+                        console.warn(
+                            'Failed to update player generation:',
+                            error
+                        )
+                    }
+                } else {
+                    console.warn('⚠️ Failed to save new first generation')
+                }
+
+                // Mark as initialized after successful reset
+                setHasInitialized(true)
+                console.log('🎉 Complete reset finished successfully!')
+            } else {
+                throw new Error('Backend reset failed')
             }
-
-            console.log(
-                '🗑️ All saved generations reset and new first generation created'
-            )
+        } catch (error) {
+            console.error('❌ Failed to reset all generations:', error)
+            throw error
+        } finally {
+            setIsResetting(false)
+            setIsInitializing(false)
         }
     }, [aiModels, population, updateAiGeneration])
 
@@ -344,7 +440,20 @@ export function NEATTrainingProvider({
     // Auto-load latest generation on mount or create first generation
     useEffect(() => {
         const initializeFromBackend = async () => {
-            console.log('🔄 Initializing AI data from backend...')
+            // Don't initialize if we're in the middle of a reset operation
+            if (isResetting) {
+                console.log('🚫 Skipping initialization - reset in progress')
+                return
+            }
+
+            // Prevent multiple initializations for the same session
+            if (hasInitialized) {
+                console.log('� Already initialized, skipping...')
+                setIsInitializing(false)
+                return
+            }
+
+            console.log('�🔄 Initializing AI data from backend...')
             setIsInitializing(true)
 
             try {
@@ -375,23 +484,42 @@ export function NEATTrainingProvider({
                         '📝 No existing generations found, creating first generation...'
                     )
 
+                    // Get current player profile to determine the correct generation number
+                    let generationToCreate = 1
+                    try {
+                        const currentProfile = await getCurrentPlayerProfile()
+                        if (currentProfile && currentProfile.aiGeneration > 0) {
+                            generationToCreate = currentProfile.aiGeneration
+                            console.log(
+                                `🔄 Using player's current aiGeneration: ${generationToCreate}`
+                            )
+                        }
+                    } catch (error) {
+                        console.warn(
+                            'Failed to get current player profile, using generation 1:',
+                            error
+                        )
+                    }
+
                     const genomes = population.getGenomes()
                     const config = DEFAULT_NEAT_CONFIG
 
                     // Save the initial generation to backend
                     const savedData = await aiModels.saveGeneration(
-                        1,
+                        generationToCreate,
                         genomes,
                         config
                     )
 
                     if (savedData) {
                         console.log(
-                            '✅ First generation created and saved to backend'
+                            `✅ First generation ${generationToCreate} created and saved to backend`
                         )
+                        setGeneration(generationToCreate)
+
                         // Update player's aiGeneration on server
                         try {
-                            await updateAiGeneration(1)
+                            await updateAiGeneration(generationToCreate)
                         } catch (error) {
                             console.warn(
                                 'Failed to update player generation:',
@@ -400,17 +528,29 @@ export function NEATTrainingProvider({
                         }
                     }
                 }
+
+                // Mark as initialized to prevent duplicate initializations
+                setHasInitialized(true)
             } catch (error) {
                 console.error('❌ Failed to initialize from backend:', error)
                 console.log('🔄 Falling back to default initialization')
-                // Fallback to default initialization if backend is not available
+                // Even if failed, mark as initialized to prevent infinite retries
+                setHasInitialized(true)
             } finally {
+                initializationInProgress.current = false
                 setIsInitializing(false)
             }
         }
 
         initializeFromBackend()
-    }, [aiModels, population, updateAiGeneration])
+    }, [
+        aiModels,
+        population,
+        updateAiGeneration,
+        getCurrentPlayerProfile,
+        isResetting,
+        hasInitialized,
+    ])
 
     const value: NEATTrainingContextType = {
         // Estados
@@ -425,6 +565,7 @@ export function NEATTrainingProvider({
         isSaving: aiModels.loading,
         isLoading: aiModels.loading,
         isInitializing,
+        isResetting,
         backendError: aiModels.error,
 
         // Funciones
