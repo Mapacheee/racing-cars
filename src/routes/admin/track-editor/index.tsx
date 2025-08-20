@@ -87,7 +87,6 @@ export default function TrackEditor(): JSX.Element {
         const dz = wp2.z - wp1.z;
         carRotation = Math.atan2(dx, dz);
     }
-    const CAR_MODEL = '/assets/models/raceCarRed.glb';
 
     const canvasKey = track?.id + '-' + (track?.waypoints?.map(wp => `${wp.x},${wp.z}`).join('|') ?? '')
     return (
