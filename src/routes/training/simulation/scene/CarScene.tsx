@@ -1,15 +1,15 @@
 import { Suspense, useState, useEffect } from 'react'
+import type { Track } from '../../../../lib/racing/track/types'
 import type { JSX } from 'react'
 import AICar from '../entities/AICar'
 import { TrackScene } from '../../../../lib/racing/track'
-import { TRACKS } from '../../../../lib/racing/track'
 import { generateAICars } from '../systems/SpawnSystem'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useRaceReset } from '../../../../lib/contexts/RaceResetContext'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'
 import { useTrackUpdates } from '../utils/TrackUpdateEvent'
 
-export default function CarScene(): JSX.Element {
+export default function CarScene({ track }: { track: Track }): JSX.Element {
     const { showWaypoints, showWalls } = useCanvasSettings()
     const { resetCounter } = useRaceReset()
     const [, forceUpdate] = useState({})
@@ -30,10 +30,18 @@ export default function CarScene(): JSX.Element {
 
     const [aiCars, setAiCars] = useState<any[]>([]);
 
-    const trackId = TRACKS['current'] ? TRACKS['current'].id : 'main_circuit';
-    const track = TRACKS['current'] || TRACKS['main_circuit'];
+    const trackId = track?.id || 'main_circuit';
 
     useEffect(() => {
+        if (!track || !track.waypoints || track.waypoints.length < 2) return;
+        // Obtén el primer y segundo waypoint
+        const firstWaypoint = track.waypoints[0];
+        const secondWaypoint = track.waypoints[1];
+        // Calcula posición y rotación
+        const dx = secondWaypoint.x - firstWaypoint.x;
+        const dz = secondWaypoint.z - firstWaypoint.z;
+        const rotation = Math.atan2(dx, dz);
+        // Genera autos usando estos datos
         const allGenomes = neatRef?.current?.population || [];
         const config: any = {
             trackId,
@@ -63,11 +71,22 @@ export default function CarScene(): JSX.Element {
             useNEAT: true,
             generation: generation,
             genomes: allGenomes,
+            spawnOverride: {
+                position: [firstWaypoint.x, -0.5, firstWaypoint.z],
+                rotation,
+            },
         };
-        const newCars = generateAICars(config);
+        let newCars = generateAICars(config);
+        if (config.spawnOverride) {
+            newCars = newCars.map((car: any) => ({
+                ...car,
+                position: config.spawnOverride.position,
+                rotation: config.spawnOverride.rotation,
+            }));
+        }
         setAiCars(newCars);
         forceUpdate({});
-    }, [generation, trackId, trackUpdateKey, resetCounter, neatRef]);
+    }, [generation, trackId, trackUpdateKey, resetCounter, neatRef, track]);
 
 
     return (

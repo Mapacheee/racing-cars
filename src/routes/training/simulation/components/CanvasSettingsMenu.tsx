@@ -1,4 +1,6 @@
 import { useEffect, type JSX } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
+import type { Track } from '../../../../lib/racing/track/types'
 import { useNavigate } from 'react-router-dom'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useNEATTraining } from '../contexts/NEATTrainingContext'
@@ -6,7 +8,7 @@ import { TRACKS, regenerateMainTrack } from '../../../../lib/racing/track'
 import { DEFAULT_NEAT_CONFIG } from '../ai/neat/NEATConfig'
 import { useFpsCounter } from '../../../../lib/racing/hooks/useFpsCounter'
 
-export default function CanvasSettingsMenu(): JSX.Element {
+export default function CanvasSettingsMenu({ setTrack }: { setTrack: Dispatch<SetStateAction<Track>> }): JSX.Element {
     const {
         showCollisions,
         setShowCollisions,
@@ -56,10 +58,8 @@ export default function CanvasSettingsMenu(): JSX.Element {
 
     const handleGenerateNewTrack = () => {
         const seed = Math.floor(Math.random() * 1000000)
-
-        // Use regenerateMainTrack to properly update the main circuit
         const newTrack = regenerateMainTrack(seed)
-        TRACKS['current'] = newTrack
+        setTrack(newTrack)
         import('../utils/TrackUpdateEvent').then(module => {
             module.trackUpdateEvents.notifyTrackUpdate()
         })

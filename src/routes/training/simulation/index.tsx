@@ -1,4 +1,6 @@
 import type { JSX, ReactNode } from 'react'
+import { TRACKS } from '../../../lib/racing/track'
+import type { Track } from '../../../lib/racing/track/types'
 import { useState, useCallback } from 'react'
 import CanvasSettingsMenu from './components/CanvasSettingsMenu'
 import SimulationCanvas from './components/SimulationCanvas'
@@ -31,11 +33,12 @@ function SimulatorProviders({
 }
 
 export default function TrainingSimulation(): JSX.Element {
+    const [track, setTrack] = useState<Track>(() => TRACKS['current'] || TRACKS['main_circuit']);
     return (
         <SimulatorProviders>
             <div className="fixed inset-0 w-screen h-screen bg-cyan-200 z-50">
-                <CanvasSettingsMenu />
-                <SimulationCanvas />
+                <CanvasSettingsMenu setTrack={setTrack} />
+                <SimulationCanvas track={track} />
             </div>
         </SimulatorProviders>
     )
