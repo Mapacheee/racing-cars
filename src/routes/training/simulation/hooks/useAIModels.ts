@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback /*useEffect*/ } from 'react'
 import { useAuth } from '../../../../lib/contexts/AuthContext'
 import {
     pushGeneration,
@@ -23,10 +23,10 @@ export function useAIModels(options: UseAIModelsOptions = {}) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    useEffect(() => {
-        console.log('@@@@ isLoading: ', isLoading)
-        console.log('@@@@ auth: ', auth)
-    }, [isLoading])
+    // useEffect(() => {
+    // console.log('@@@@ isLoading: ', isLoading)
+    // console.log('@@@@ auth: ', auth)
+    // }, [isLoading])
 
     const handleError = useCallback(
         (error: Error) => {

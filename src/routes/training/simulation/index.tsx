@@ -4,41 +4,41 @@ import type { Track } from '../../../lib/racing/track/types'
 import { useState, useCallback } from 'react'
 import CanvasSettingsMenu from './components/CanvasSettingsMenu'
 import SimulationCanvas from './components/SimulationCanvas'
-import LoadingScreen from './components/LoadingScreen'
-import LoadingWrapper from './components/LoadingWrapper'
+// import LoadingScreen from './components/LoadingScreen'
+// import LoadingWrapper from './components/LoadingWrapper'
 import {
     NEATTrainingProvider,
-    useNEATTraining,
+    // useNEATTraining,
 } from './contexts/NEATTrainingContext'
 import { CarProvider } from '../../../lib/contexts/CarContext'
 import { RaceResetProvider } from '../../../lib/contexts/RaceResetContext'
 
-function SimulationContent(): JSX.Element {
-    const neatContext = useNEATTraining()
+// function SimulationContent(): JSX.Element {
+//     const neatContext = useNEATTraining()
 
-    if (!neatContext) {
-        return <LoadingScreen message="Inicializando contexto NEAT..." />
-    }
+//     if (!neatContext) {
+//         return <LoadingScreen message="Inicializando contexto NEAT..." />
+//     }
 
-    const { isInitializing, isResetting } = neatContext
+//     const { isInitializing, isResetting } = neatContext
 
-    return (
-        <LoadingWrapper
-            isLoading={isInitializing || isResetting}
-            message={
-                isResetting
-                    ? 'Reseteando todas las generaciones y creando nueva...'
-                    : 'Cargando datos de entrenamiento desde el servidor...'
-            }
-            minimumDisplayTime={isResetting ? 2000 : 1500} // Longer display for reset
-        >
-            <>
-                <CanvasSettingsMenu />
-                <SimulationCanvas />
-            </>
-        </LoadingWrapper>
-    )
-}
+//     return (
+//         <LoadingWrapper
+//             isLoading={isInitializing || isResetting}
+//             message={
+//                 isResetting
+//                     ? 'Reseteando todas las generaciones y creando nueva...'
+//                     : 'Cargando datos de entrenamiento desde el servidor...'
+//             }
+//             minimumDisplayTime={isResetting ? 2000 : 1500} // Longer display for reset
+//         >
+//             <>
+//                 <CanvasSettingsMenu />
+//                 <SimulationCanvas />
+//             </>
+//         </LoadingWrapper>
+//     )
+// }
 
 function SimulatorProviders({
     children,
@@ -65,16 +65,14 @@ function SimulatorProviders({
 }
 
 export default function TrainingSimulation(): JSX.Element {
-    const [track, setTrack] = useState<Track>(() => TRACKS['current'] || TRACKS['main_circuit']);
+    const [track, setTrack] = useState<Track>(
+        () => TRACKS['current'] || TRACKS['main_circuit']
+    )
     return (
         <SimulatorProviders>
             <div className="fixed inset-0 w-screen h-screen bg-cyan-200 z-50">
-<<<<<<< HEAD
-                <SimulationContent />
-=======
                 <CanvasSettingsMenu setTrack={setTrack} />
                 <SimulationCanvas track={track} />
->>>>>>> 5bc5af43e6741edd7bb58d72e03ca9a61e4e85a8
             </div>
         </SimulatorProviders>
     )

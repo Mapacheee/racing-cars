@@ -4,13 +4,14 @@ import {
     useState,
     useCallback,
     useRef,
+    // useEffect,
     type ReactNode,
     type JSX,
 } from 'react'
 import { Neat, methods } from 'neataptic'
 import { useRaceReset } from '../../../../lib/contexts/RaceResetContext'
-import { usePlayerProfileUpdates } from '../../../../lib/hooks/usePlayerProfileUpdates'
-import { useAIModels } from '../hooks/useAIModels'
+// import { usePlayerProfileUpdates } from '../../../../lib/hooks/usePlayerProfileUpdates'
+// import { useAIModels } from '../hooks/useAIModels'
 import type { FitnessMetrics } from '../types/neat'
 
 interface CarState {
@@ -124,18 +125,18 @@ export function NEATTrainingProvider({
     // Hook para manejar reset de la escena
     const { triggerReset } = useRaceReset()
 
-    const aiModels = useAIModels({
-        onError: error => console.error('Backend error:', error.message),
-        onSuccess: message => console.log('Backend success:', message),
-    })
+    // const aiModels = useAIModels({
+    //     onError: error => console.error('Backend error:', error.message),
+    //     onSuccess: message => console.log('Backend success:', message),
+    // })
 
-    useEffect(() => {
-        console.log('@@@@ aiModels: ', aiModels)
-    }, [aiModels])
+    // useEffect(() => {
+    //     console.log('@@@@ aiModels: ', aiModels)
+    // }, [aiModels])
 
     // Hook for updating player profile in background
-    const { updateAiGeneration, getCurrentPlayerProfile } =
-        usePlayerProfileUpdates()
+    // const { updateAiGeneration, getCurrentPlayerProfile } =
+    //     usePlayerProfileUpdates()
 
     const simulationActive = useRef(false)
 

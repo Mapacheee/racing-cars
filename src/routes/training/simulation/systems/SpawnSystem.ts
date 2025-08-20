@@ -61,9 +61,9 @@ export function generateAICars(config: {
                 } else {
                     aiCar.genome = config.genomes[i]
                 }
-                console.log(
-                    `🧬 Car ${aiCar.id} using evolved network JSON from generation ${config.generation}`
-                )
+                // console.log(
+                //     `🧬 Car ${aiCar.id} using evolved network JSON from generation ${config.generation}`
+                // )
             } else {
                 const tempNeat = new Neat(6, 3, null, {
                     mutation: methods.mutation.ALL,

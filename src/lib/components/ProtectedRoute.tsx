@@ -1,5 +1,4 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useState, useEffect } from 'react'
 import type { JSX } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
