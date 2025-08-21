@@ -2,14 +2,12 @@ import { Network } from 'neataptic'
 import type { Genome } from '../types/neat'
 
 type ControlActions = {
-    acceleration: number;
-    steerRight: number;
-    steerLeft: number;
-} | {
-    acceleration: number;
-    steering: number;
-};
-import { SimpleCarPhysics } from './utils/SimpleCarPhysics';
+    acceleration: number
+    steerRight: number
+    steerLeft: number
+}
+
+import { SimpleCarPhysics } from './utils/SimpleCarPhysics'
 
 export class NEATCarController {
     private network: any
@@ -27,10 +25,9 @@ export class NEATCarController {
     }
 
     getControlActions(sensorReadings: any, speed: number): ControlActions {
-        const maxSpeed = SimpleCarPhysics.getMaxSpeed();
-        const speedNormalized = Math.max(0, Math.min(1, speed / maxSpeed));
+        const maxSpeed = SimpleCarPhysics.getMaxSpeed()
+        const speedNormalized = Math.max(0, Math.min(1, speed / maxSpeed))
 
-        // Inputs para la red NEAT
         const inputs: number[] = [
             sensorReadings.left,
             sensorReadings.leftCenter,
@@ -38,38 +35,36 @@ export class NEATCarController {
             sensorReadings.rightCenter,
             sensorReadings.right,
             speedNormalized,
-        ];
+        ]
 
-        const outputs = this.network.activate(inputs) as number[];
-        const acceleration = Math.max(0, Math.min(1, outputs[0]));
-        const steerRight = Math.max(0, Math.min(1, outputs[1]));
-        const steerLeft = Math.max(0, Math.min(1, outputs[2]));
+        const outputs = this.network.activate(inputs) as number[]
+        const acceleration = Math.max(0, Math.min(1, outputs[0]))
+        const steerRight = Math.max(0, Math.min(1, outputs[1]))
+        const steerLeft = Math.max(0, Math.min(1, outputs[2]))
 
-        // Devuelve ambos valores de giro por separado
         return {
             acceleration,
             steerRight,
             steerLeft,
-        };
+        }
     }
 
     applyActions(actions: ControlActions, rigidBody: any): void {
-        if (!rigidBody) return;
-        // Si los valores de giro están presentes, calcula steering como la diferencia
-        let steering = 0;
+        if (!rigidBody) return
+        let steering = 0
         if (
             typeof (actions as any).steerRight === 'number' &&
             typeof (actions as any).steerLeft === 'number'
         ) {
-            steering = (actions as any).steerRight - (actions as any).steerLeft;
+            steering = (actions as any).steerRight - (actions as any).steerLeft
         } else if (typeof (actions as any).steering === 'number') {
-            steering = (actions as any).steering;
+            steering = (actions as any).steering
         }
         const controls = {
             throttle: actions.acceleration,
             steering,
-        };
-        SimpleCarPhysics.updateCarPhysics(rigidBody, controls);
+        }
+        SimpleCarPhysics.updateCarPhysics(rigidBody, controls)
     }
 
     getGenome(): Genome {

@@ -6,10 +6,10 @@ import { TrackDistanceTracker } from './TrackDistanceTracker'
 
 export class CarFitnessTracker {
     public getCurrentWaypointIndex(): number {
-        return this.currentWaypointIndex;
+        return this.currentWaypointIndex
     }
-    private steeringHistory: number[] = [];
-    private steeringPenaltyAccumulator: number = 0;
+    private steeringHistory: number[] = []
+    private steeringPenaltyAccumulator: number = 0
     private metrics: FitnessMetrics
     private carId: string
     private startTime: number
@@ -44,13 +44,13 @@ export class CarFitnessTracker {
     }
 
     recordSteering(steering: number): void {
-        this.steeringHistory.push(steering);
+        this.steeringHistory.push(steering)
         if (this.steeringHistory.length > 120) {
-            this.steeringHistory.shift();
+            this.steeringHistory.shift()
         }
-        const sum = this.steeringHistory.reduce((a, b) => a + b, 0);
+        const sum = this.steeringHistory.reduce((a, b) => a + b, 0)
         if (Math.abs(sum) > 80) {
-            this.steeringPenaltyAccumulator -= 0.5;
+            this.steeringPenaltyAccumulator -= 0.5
         }
     }
 
@@ -150,27 +150,35 @@ export class CarFitnessTracker {
             sensorReadings.leftCenter +
             sensorReadings.center +
             sensorReadings.rightCenter +
-            sensorReadings.right;
+            sensorReadings.right
 
-        (['left', 'leftCenter', 'center', 'rightCenter', 'right'] as (keyof SensorReading)[]).forEach(key => {
+        ;(
+            [
+                'left',
+                'leftCenter',
+                'center',
+                'rightCenter',
+                'right',
+            ] as (keyof SensorReading)[]
+        ).forEach(key => {
             if (sensorReadings[key] > 0.7) {
-                this.sensorBonusAccumulator += 0.07;
+                this.sensorBonusAccumulator += 0.07
             }
-        });
+        })
 
         if (sensorReadings.center > 0.7) {
-            this.sensorBonusAccumulator += 0.12;
+            this.sensorBonusAccumulator += 0.12
         }
 
         if (sensorReadings.left < 0.3) {
-            this.sensorBonusAccumulator -= 0.08;
+            this.sensorBonusAccumulator -= 0.08
         }
         if (sensorReadings.right < 0.3) {
-            this.sensorBonusAccumulator -= 0.08;
+            this.sensorBonusAccumulator -= 0.08
         }
 
         if (sensorSum > 4.0) {
-            this.sensorBonusAccumulator += 0.03;
+            this.sensorBonusAccumulator += 0.03
         }
     }
 
@@ -225,30 +233,31 @@ export class CarFitnessTracker {
      * Enhanced fitness calculation using track-based distance
      */
     calculateFitness(): number {
-        const now = Date.now();
-        const timeAlive = (now - this.startTime) / 1000;
+        const now = Date.now()
+        const timeAlive = (now - this.startTime) / 1000
 
         // Distance bonus
-        const distanceBonus = Math.min(this.metrics.distanceTraveled * 1.2, 60);
+        const distanceBonus = Math.min(this.metrics.distanceTraveled * 1.2, 60)
 
-
-        // Speed bonus 
-        const speedBonus = Math.min(this.metrics.averageSpeed * 3, 10);
+        // Speed bonus
+        const speedBonus = Math.min(this.metrics.averageSpeed * 3, 10)
 
         // Sensor bonus
-        const sensorBonus = Math.min(this.sensorBonusAccumulator, 8);
+        const sensorBonus = Math.min(this.sensorBonusAccumulator, 8)
 
         // Waypoint rewards
-    const waypointPoints = this.metrics.checkpointsReached * 180;
-    const waypointBonus = Math.pow(this.metrics.checkpointsReached, 2) * 40;
+        const waypointPoints = this.metrics.checkpointsReached * 180
+        const waypointBonus = Math.pow(this.metrics.checkpointsReached, 2) * 40
 
         // Lap completion bonus
-        const lapBonus = this.lapCompleted ? Math.max(120 - timeAlive / 2, 40) : 0;
+        const lapBonus = this.lapCompleted
+            ? Math.max(120 - timeAlive / 2, 40)
+            : 0
 
         // Penalties
-        const backwardPenalty = this.metrics.backwardMovement * -1.2;
-    const collisionPenalty = this.metrics.collisions * -30;
-        const inactivityPenalty = this.getInactivityPenalty() * 2;
+        const backwardPenalty = this.metrics.backwardMovement * -1.2
+        const collisionPenalty = this.metrics.collisions * -30
+        const inactivityPenalty = this.getInactivityPenalty() * 2
 
         let totalFitness =
             distanceBonus +
@@ -260,23 +269,23 @@ export class CarFitnessTracker {
             backwardPenalty +
             collisionPenalty +
             inactivityPenalty +
-            this.steeringPenaltyAccumulator;
+            this.steeringPenaltyAccumulator
 
         if (this.metrics.checkpointsReached === 0) {
-            totalFitness = Math.min(totalFitness, 1.0);
+            totalFitness = Math.min(totalFitness, 1.0)
         }
 
-        return Math.max(0.1, totalFitness);
+        return Math.max(0.1, totalFitness)
     }
 
     private getInactivityPenalty(): number {
         const now = Date.now()
         const timeSinceProgress = (now - this.lastProgressTime) / 1000
 
-    if (timeSinceProgress > 8) return -8;
-    if (timeSinceProgress > 6) return -4;
-    if (timeSinceProgress > 4) return -1;
-    return 0;
+        if (timeSinceProgress > 8) return -8
+        if (timeSinceProgress > 6) return -4
+        if (timeSinceProgress > 4) return -1
+        return 0
     }
 
     hasTimeout(): boolean {
