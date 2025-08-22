@@ -47,6 +47,7 @@ export default function CanvasSettingsMenu({
         startTraining,
         stopTraining,
         restartGeneration,
+        restartFromCurrentGeneration,
         evolveToNextGeneration,
         resetAllSavedGenerations,
     } = neatContext
@@ -87,7 +88,7 @@ export default function CanvasSettingsMenu({
 
     const handleStopAndRetrain = () => {
         stopTraining()
-        restartGeneration()
+        restartFromCurrentGeneration()
         setShowStopModal(false)
     }
 
@@ -201,7 +202,7 @@ export default function CanvasSettingsMenu({
                         <button
                             onClick={() => {
                                 if (isTraining) stopTraining()
-                                restartGeneration()
+                                resetAllSavedGenerations()
                             }}
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-xs transition-colors"
                             title="Reiniciar esta generación desde el principio"
