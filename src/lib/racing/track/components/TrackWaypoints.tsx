@@ -38,7 +38,6 @@ export default function TrackWaypoints({
 
                 return (
                     <group key={`waypoint-${index}`}>
-                        {/* waypoint sphere marker */}
                         <mesh position={[waypoint.x, 0.3, waypoint.z]}>
                             <sphereGeometry args={[isStartPoint ? 0.4 : 0.3]} />
                             <meshStandardMaterial
@@ -47,7 +46,6 @@ export default function TrackWaypoints({
                             />
                         </mesh>
 
-                        {/* waypoint number label for start point only */}
                         {isStartPoint && (
                             <Text
                                 position={[waypoint.x, 0.8, waypoint.z]}
@@ -61,7 +59,6 @@ export default function TrackWaypoints({
                             </Text>
                         )}
 
-                        {/* connection line to next waypoint */}
                         <mesh
                             position={[
                                 (waypoint.x + nextWaypoint.x) / 2,

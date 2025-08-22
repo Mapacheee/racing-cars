@@ -16,7 +16,6 @@ import AdminMenu from './routes/admin/menu/index.tsx'
 import { RaceDetail } from './routes/admin/races/RaceDetail.tsx'
 import { CreateRaceForm } from './routes/admin/races/CreateRaceForm.tsx'
 import { RaceList } from './routes/admin/races/RaceList.tsx'
-import { AdminDashboard } from './routes/admin/dashboard/index.tsx'
 import AdminRoom from './routes/admin/room/index.tsx'
 import PlayerRoom from './routes/training/room/index.tsx'
 import TrackEditor from './routes/admin/track-editor/index.tsx'
@@ -68,10 +67,7 @@ export default function App(): JSX.Element {
                             element={<CreateRaceForm />}
                         />
                         <Route path="/admin/:id" element={<RaceDetail />} />
-                        <Route
-                            path="/admin/dashboard"
-                            element={<AdminDashboard />}
-                        />
+
                         {/* Default redirect for /admin */}
                         <Route
                             path="/admin/*"

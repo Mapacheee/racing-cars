@@ -1,12 +1,3 @@
-/**
- * Racing Stream WebSocket Type Definitions
- *
- * 🔐 AUTHENTICATION: All WebSocket endpoints require JWT authentication
- * - Connection must include: { auth: { token: 'jwt-token' } }
- * - Admin operations require admin-level JWT token
- * - Player operations require valid player JWT token
- */
-
 export type RoomStatus = 'waiting' | 'configured' | 'racing' | 'finished'
 
 export interface RoomParticipant {

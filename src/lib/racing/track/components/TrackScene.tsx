@@ -25,11 +25,9 @@ export default function TrackScene({
 }: TrackSceneProps) {
     const sceneContent = (
         <>
-            {/* lighting setup */}
             <ambientLight intensity={0.7} />
             <directionalLight position={[5, 10, 7]} intensity={1} />
 
-            {/* ground plane with or without physics */}
             {enablePhysics ? (
                 <RigidBody
                     type="fixed"
@@ -51,7 +49,6 @@ export default function TrackScene({
                 </mesh>
             )}
 
-            {/* track components */}
             <Track3D
                 pieces={track.pieces}
                 visible={settings.showTrack}
@@ -68,10 +65,8 @@ export default function TrackScene({
                 highlightedIndex={highlightedWaypoint}
             />
 
-            {/* custom children (cars, UI, etc) */}
             {children}
 
-            {/* camera controls */}
             {enableControls && (
                 <OrbitControls enablePan enableZoom enableRotate />
             )}

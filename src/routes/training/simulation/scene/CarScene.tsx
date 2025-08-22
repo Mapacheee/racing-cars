@@ -160,7 +160,6 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
             enablePhysics={true}
             enableControls={true}
         >
-            {/* render ai cars only when NEAT is ready */}
             {isNeatReady &&
                 carStates &&
                 handleFitnessUpdate &&

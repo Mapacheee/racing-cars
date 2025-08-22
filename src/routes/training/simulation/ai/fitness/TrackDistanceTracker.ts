@@ -1,9 +1,6 @@
 import { Vector3 } from 'three'
 import type { Waypoint } from '../../../../../lib/racing/track'
 
-/**
- * Represents a track segment between two consecutive waypoints
- */
 interface TrackSegment {
     startPoint: Vector3
     endPoint: Vector3
@@ -11,18 +8,12 @@ interface TrackSegment {
     length: number
 }
 
-/**
- * Precomputed track data for efficient distance calculations
- */
 interface TrackData {
     segments: TrackSegment[]
     cumulativeDistances: number[] // cum[i] = total distance from start to beginning of segment i
     totalLength: number
 }
 
-/**
- * Result of projecting a car position onto the track
- */
 interface ProjectionResult {
     segmentIndex: number
     t: number // parameter along segment (0-1)
@@ -31,9 +22,6 @@ interface ProjectionResult {
     progress: number // distance along track from start
 }
 
-/**
- * Car tracking state for distance measurements
- */
 interface CarTrackingState {
     lastProgress: number
     totalAccumulated: number
@@ -41,10 +29,6 @@ interface CarTrackingState {
     isGoingForward: boolean
 }
 
-/**
- * Advanced track-based distance measurement system
- * Provides accurate progress tracking along racing circuits
- */
 export class TrackDistanceTracker {
     private trackData: TrackData
     private carStates: Map<string, CarTrackingState> = new Map()
@@ -53,9 +37,6 @@ export class TrackDistanceTracker {
         this.trackData = this.precomputeTrackData(waypoints)
     }
 
-    /**
-     * Precompute track segments and cumulative distances for efficient lookup
-     */
     private precomputeTrackData(waypoints: Waypoint[]): TrackData {
         const segments: TrackSegment[] = []
         const cumulativeDistances: number[] = [0]
@@ -90,9 +71,6 @@ export class TrackDistanceTracker {
         }
     }
 
-    /**
-     * Project a 3D position onto the track and find the closest segment
-     */
     private projectPositionOntoTrack(
         position: Vector3,
         lastSegmentIndex: number = 0
@@ -135,9 +113,6 @@ export class TrackDistanceTracker {
         return bestProjection!
     }
 
-    /**
-     * Project a point onto a single track segment
-     */
     private projectPointOntoSegment(
         point: Vector3,
         segment: TrackSegment,
@@ -170,9 +145,6 @@ export class TrackDistanceTracker {
         }
     }
 
-    /**
-     * Update car position and calculate distance traveled
-     */
     updateCarPosition(
         carId: string,
         position: Vector3,
@@ -230,9 +202,6 @@ export class TrackDistanceTracker {
         }
     }
 
-    /**
-     * Reset tracking for a specific car
-     */
     resetCar(carId: string, position: Vector3): void {
         const initialProjection = this.projectPositionOntoTrack(position, 0)
         this.carStates.set(carId, {
@@ -243,16 +212,10 @@ export class TrackDistanceTracker {
         })
     }
 
-    /**
-     * Get current car state for debugging
-     */
     getCarState(carId: string): CarTrackingState | undefined {
         return this.carStates.get(carId)
     }
 
-    /**
-     * Get track statistics
-     */
     getTrackInfo(): { totalLength: number; segmentCount: number } {
         return {
             totalLength: this.trackData.totalLength,
@@ -260,9 +223,6 @@ export class TrackDistanceTracker {
         }
     }
 
-    /**
-     * Remove car tracking data
-     */
     removeCar(carId: string): void {
         this.carStates.delete(carId)
     }

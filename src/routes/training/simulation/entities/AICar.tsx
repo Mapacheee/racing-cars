@@ -43,7 +43,7 @@ export default function AICar({
         new Vector3(...carData.position)
     )
     const [carHeading, setCarHeading] = useState<number>(carData.rotation || 0)
-    const [quietTime, setQuietTime] = useState(0)
+    const [_quietTime, setQuietTime] = useState(0)
 
     const isNeatReady = neatContext && neatContext.neatRef?.current
 

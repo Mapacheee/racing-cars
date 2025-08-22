@@ -37,7 +37,6 @@ body {
     text-align: center;
 }
 
-/* Custom game-specific utilities */
 @layer utilities {
     .no-select {
         -webkit-user-select: none;

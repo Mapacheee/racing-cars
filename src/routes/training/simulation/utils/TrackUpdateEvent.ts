@@ -1,8 +1,3 @@
-/**
- * Track Update Event System
- * Provides a way to notify components when tracks are updated
- */
-
 type TrackUpdateListener = () => void
 
 class TrackUpdateEventSystem {

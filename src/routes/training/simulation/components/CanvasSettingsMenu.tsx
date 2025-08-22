@@ -50,11 +50,17 @@ export default function CanvasSettingsMenu({
         restartFromCurrentGeneration,
         evolveToNextGeneration,
         resetAllSavedGenerations,
+        isInitializing,
+        isResetting,
+        isSaving,
+        isLoading,
     } = neatContext
 
     const track = TRACKS['main_circuit']
 
-    const totalCars = getPopulationSize() // Obtener dinámicamente de la configuración NEAT
+    const isNeatBusy = isInitializing || isResetting || isSaving || isLoading
+
+    const totalCars = getPopulationSize()
     const aliveCars =
         totalCars -
         Array.from(carStates.values()).filter(car => car.isEliminated).length
@@ -173,9 +179,28 @@ export default function CanvasSettingsMenu({
                     )}
 
                     <div
-                        className={`${isTraining ? 'text-green-600' : 'text-red-600'}`}
+                        className={`${
+                            isNeatBusy
+                                ? 'text-orange-600'
+                                : isTraining
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                        }`}
                     >
-                        Estado: {isTraining ? 'Entrenando' : 'Detenido'}
+                        Estado:{' '}
+                        {isNeatBusy
+                            ? isInitializing
+                                ? 'Inicializando...'
+                                : isResetting
+                                  ? 'Reseteando...'
+                                  : isSaving
+                                    ? 'Guardando...'
+                                    : isLoading
+                                      ? 'Cargando...'
+                                      : 'Procesando...'
+                            : isTraining
+                              ? 'Entrenando'
+                              : 'Detenido'}
                     </div>
                 </div>
 
@@ -184,14 +209,24 @@ export default function CanvasSettingsMenu({
                     {!isTraining ? (
                         <button
                             onClick={startTraining}
-                            className="w-auto px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors"
+                            disabled={isNeatBusy}
+                            className={`w-auto px-3 py-1 text-white rounded text-xs transition-colors ${
+                                isNeatBusy
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-green-600 hover:bg-green-700'
+                            }`}
                         >
-                            Iniciar
+                            {isNeatBusy ? 'Procesando...' : 'Iniciar'}
                         </button>
                     ) : (
                         <button
                             onClick={() => setShowStopModal(true)}
-                            className="w-auto px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors"
+                            disabled={isNeatBusy}
+                            className={`w-auto px-3 py-1 text-white rounded text-xs transition-colors ${
+                                isNeatBusy
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-red-600 hover:bg-red-700'
+                            }`}
                         >
                             Detener
                         </button>
@@ -203,7 +238,12 @@ export default function CanvasSettingsMenu({
                                 if (isTraining) stopTraining()
                                 restartFromCurrentGeneration()
                             }}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-xs transition-colors"
+                            disabled={isNeatBusy}
+                            className={`flex-1 text-white py-1 px-2 rounded text-xs transition-colors ${
+                                isNeatBusy
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-blue-600 hover:bg-blue-700'
+                            }`}
                             title="Reiniciar esta generación desde el principio"
                         >
                             Reiniciar
@@ -211,7 +251,12 @@ export default function CanvasSettingsMenu({
 
                         <button
                             onClick={evolveToNextGeneration}
-                            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1 px-2 rounded text-xs transition-colors"
+                            disabled={isNeatBusy}
+                            className={`flex-1 text-white py-1 px-2 rounded text-xs transition-colors ${
+                                isNeatBusy
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-purple-600 hover:bg-purple-700'
+                            }`}
                             title={
                                 isTraining
                                     ? 'Detener entrenamiento y evolucionar'
@@ -247,9 +292,14 @@ export default function CanvasSettingsMenu({
                 <div className="mt-3 pt-3 border-t border-gray-200">
                     <button
                         onClick={() => setShowResetAllModal(true)}
-                        className="w-full bg-gray-600 hover:bg-gray-700 text-white py-1 px-2 rounded text-xs transition-colors"
+                        disabled={isNeatBusy}
+                        className={`w-full text-white py-1 px-2 rounded text-xs transition-colors ${
+                            isNeatBusy
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gray-600 hover:bg-gray-700'
+                        }`}
                     >
-                        Empezar desde cero
+                        {isNeatBusy ? 'Procesando...' : 'Empezar desde cero'}
                     </button>
                 </div>
             </div>
