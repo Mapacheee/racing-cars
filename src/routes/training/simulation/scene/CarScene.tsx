@@ -27,19 +27,64 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
         isLoading,
     } = neatContext || {}
 
+    // Debug neatRef reference
+    console.log('🔍 CarScene neatRef reference debug:', {
+        hasNeatContext: !!neatContext,
+        hasNeatRef: !!neatRef,
+        neatRefReference: neatRef, // Log the actual reference
+        neatRefCurrent: neatRef?.current,
+        isLoadingValue: isLoading,
+    })
+
     const trackId = track?.id || 'main_circuit'
 
     // Check if NEAT is ready to generate cars
-    const isNeatReady = neatContext && !isLoading && neatRef?.current
+    const isNeatReady = !!(neatContext && !isLoading && neatRef?.current)
 
     useEffect(() => {
-        if (!track || !track.waypoints || track.waypoints.length < 2) return
-        if (!isNeatReady || !neatRef?.current?.population) {
+        console.log('!!!!! isNeatReady(CarScene): ', isNeatReady)
+        console.log('!!!! CarScene: ', {
+            isNeatReady,
+            neatContext: !!neatContext,
+            isLoading,
+            neatRefCurrent: neatRef?.current,
+            hasNeatRef: !!neatRef,
+            neatRefCurrentType: typeof neatRef?.current,
+            neatRefCurrentPopulation: neatRef?.current?.population?.length,
+        })
+
+        // More detailed logging about why NEAT might not be ready
+        if (!neatContext) {
+            console.log('❌ CarScene: neatContext is null/undefined')
+            return
+        }
+        if (isLoading) {
+            console.log('⏳ CarScene: NEAT is still loading')
+            return
+        }
+        if (!neatRef) {
+            console.log('❌ CarScene: neatRef is null/undefined')
+            return
+        }
+        if (!neatRef.current) {
             console.log(
-                'NEAT population not ready yet, skipping car generation'
+                '❌ CarScene: neatRef.current is null/undefined - NEAT instance not created yet'
             )
             return
         }
+        if (!neatRef.current.population) {
+            console.log(
+                '❌ CarScene: neatRef.current.population is null/undefined'
+            )
+            return
+        }
+
+        if (!track || !track.waypoints || track.waypoints.length < 2) {
+            console.log('❌ CarScene: track or waypoints not ready')
+            return
+        }
+
+        console.log('✅ CarScene: All conditions met, generating cars...')
 
         // Get the first and second waypoint
         const firstWaypoint = track.waypoints[0]

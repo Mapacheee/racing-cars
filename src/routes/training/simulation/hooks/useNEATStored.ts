@@ -107,9 +107,25 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
         generationNumber: number
         neatConfig: NEATConfig
     } | null> => {
+        console.log('📡 Starting loadLatestGeneration API call...')
         setLoading(true)
         try {
+            console.log(
+                '🌐 Calling tryGetLatestGeneration with token:',
+                auth.token ? 'present' : 'missing'
+            )
             const result = await tryGetLatestGeneration(auth.token)
+
+            console.log('📦 Raw API response received:', {
+                hasResult: !!result,
+                resultType: typeof result,
+                generationNumber: result?.generationNumber,
+                networksType: typeof result?.networks,
+                networksIsArray: Array.isArray(result?.networks),
+                networksLength: result?.networks?.length,
+                totalNetworks: result?.totalNetworks,
+            })
+
             if (result) {
                 console.log('🔍 Backend response structure:', {
                     generationNumber: result.generationNumber,
@@ -162,6 +178,9 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
                         generationRecord.neatConfig || getDefaultNEATConfig(),
                 }
             } else {
+                console.log(
+                    '📭 API returned null/empty result - no generations exist in database'
+                )
                 handleSuccess('No saved generations found')
                 return null
             }
@@ -285,7 +304,7 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
     return {
         loading: loading || isLoading,
         error,
-        isAuthReady: !isLoading && !!auth?.token,
+        isAuthReady: !isLoading,
         saveGeneration,
         loadLatestGeneration,
         loadGeneration,

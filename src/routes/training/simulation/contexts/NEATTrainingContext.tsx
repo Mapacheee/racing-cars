@@ -105,7 +105,11 @@ export function NEATTrainingProvider({
 
     const neatRef = useRef<any>(null)
 
-    // Don't create default NEAT instance immediately - wait for backend check
+    console.log('🔍 NEATTrainingProvider initialized:', {
+        neatRefInitial: neatRef.current,
+        hasInitialized,
+        isInitializing,
+    })
 
     const { triggerReset } = useRaceReset()
 
@@ -388,7 +392,12 @@ export function NEATTrainingProvider({
             console.log('📤 Saving generation to backend...')
 
             // Export population data using neataptic's export method
-            const neatExportData = neatRef.current.export()
+            const neatExportRaw = neatRef.current.export()
+            // Ensure networkData is a JSON object, not a string
+            const neatExportData =
+                typeof neatExportRaw === 'string'
+                    ? JSON.parse(neatExportRaw)
+                    : neatExportRaw
 
             // Convert current car states to simple fitness map
             const fitnessMap = new Map<string, { fitness: number }>()
@@ -635,66 +644,94 @@ export function NEATTrainingProvider({
 
     // Initialize loading state
     useEffect(() => {
+        console.log('🔍 Initialization useEffect triggered:', {
+            hasInitialized,
+            initializationInProgress: initializationInProgress.current,
+            shouldInitialize:
+                !hasInitialized && !initializationInProgress.current,
+            neatRefCurrent: !!neatRef.current,
+        })
+
         if (!hasInitialized && !initializationInProgress.current) {
             initializationInProgress.current = true
 
             const initializeFromBackend = async () => {
-                // console.log('🚀 Starting NEAT initialization...', {
-                //     isAuthReady: aiModels.isAuthReady,
-                //     hasInitialized,
-                //     initializationInProgress: initializationInProgress.current,
-                // })
+                console.log('🚀 Starting NEAT initialization...', {
+                    isAuthReady: aiModels.isAuthReady,
+                    loading: aiModels.loading,
+                    error: aiModels.error,
+                    hasInitialized,
+                    initializationInProgress: initializationInProgress.current,
+                })
 
                 try {
-                    // If authentication is ready, try to load from backend
+                    // Always try to load from backend if auth is ready
                     if (aiModels.isAuthReady) {
                         console.log(
-                            '🔄 Checking for existing AI data in backend...'
+                            '🔄 Auth ready, checking database for AI data...'
                         )
 
-                        // Check if user has any saved generations
-                        const hasExistingData =
-                            await aiModels.hasAnyGenerations()
+                        // Always try to load latest generation first
+                        console.log('📡 Calling loadLatestGeneration...')
+                        const response = await aiModels.loadLatestGeneration()
 
-                        if (hasExistingData) {
+                        if (response) {
+                            console.log('✅ Database response received:', {
+                                generationNumber: response.generationNumber,
+                                hasNeatExportData: !!response.neatExportData,
+                                neatExportDataType:
+                                    typeof response.neatExportData,
+                                neatConfig: response.neatConfig,
+                            })
+
                             console.log(
-                                '📥 Found existing data, loading latest generation...'
+                                '🔄 Creating NEAT instance with loaded config...'
                             )
-                            const response =
-                                await aiModels.loadLatestGeneration()
+                            // Create new NEAT instance with loaded config
+                            neatRef.current = new Neat(
+                                response.neatConfig.inputNodes,
+                                response.neatConfig.outputNodes,
+                                null,
+                                {
+                                    mutation: methods.mutation.ALL,
+                                    popsize: response.neatConfig.populationSize,
+                                    mutationRate:
+                                        response.neatConfig.mutationRate,
+                                    elitism: response.neatConfig.elitism,
+                                }
+                            )
 
-                            if (response) {
-                                console.log(
-                                    '🔄 Importing population data using neataptic...'
-                                )
+                            console.log('✅ NEAT instance created:', {
+                                neatRefExists: !!neatRef.current,
+                                hasPopulation: !!neatRef.current?.population,
+                                populationLength:
+                                    neatRef.current?.population?.length,
+                            })
 
-                                // Create new NEAT instance with loaded config
-                                neatRef.current = new Neat(
-                                    response.neatConfig.inputNodes,
-                                    response.neatConfig.outputNodes,
-                                    null,
-                                    {
-                                        mutation: methods.mutation.ALL,
-                                        popsize:
-                                            response.neatConfig.populationSize,
-                                        mutationRate:
-                                            response.neatConfig.mutationRate,
-                                        elitism: response.neatConfig.elitism,
-                                    }
-                                )
+                            console.log(
+                                '📥 Importing population data using neataptic...'
+                            )
+                            // Import the population data using neataptic's import method
+                            neatRef.current.import(response.neatExportData)
 
-                                // Import the population data using neataptic's import method
-                                neatRef.current.import(response.neatExportData)
-                                setGeneration(response.generationNumber)
-                                console.log(
-                                    `✅ Restored generation ${response.generationNumber} from backend`
-                                )
-                            }
+                            console.log('✅ Population imported:', {
+                                populationAfterImport:
+                                    neatRef.current?.population?.length,
+                                neatRefStillExists: !!neatRef.current,
+                            })
+
+                            setGeneration(response.generationNumber)
+                            console.log(
+                                `✅ Successfully restored generation ${response.generationNumber} from database`
+                            )
+                            console.log(
+                                '👥 Population size after import:',
+                                neatRef.current.population?.length
+                            )
                         } else {
                             console.log(
-                                '🆕 No existing data found, starting with fresh population'
+                                '🆕 No saved data found in database - creating fresh NEAT instance'
                             )
-
                             // Create default NEAT instance since no backend data exists
                             neatRef.current = new Neat(
                                 6, // número de inputs
@@ -707,6 +744,13 @@ export function NEATTrainingProvider({
                                     elitism: 3,
                                 }
                             )
+
+                            console.log('✅ Fresh NEAT instance created:', {
+                                neatRefExists: !!neatRef.current,
+                                hasPopulation: !!neatRef.current?.population,
+                                populationLength:
+                                    neatRef.current?.population?.length,
+                            })
 
                             // Apply initial mutations to create diversity
                             neatRef.current.population.forEach(
@@ -726,9 +770,20 @@ export function NEATTrainingProvider({
                             )
 
                             console.log(
-                                '✅ Created default NEAT instance:',
-                                neatRef.current
+                                '✅ Mutations applied to fresh NEAT instance:',
+                                {
+                                    populationAfterMutations:
+                                        neatRef.current?.population?.length,
+                                    neatRefStillExists: !!neatRef.current,
+                                }
                             )
+
+                            console.log('✅ Created fresh NEAT instance:', {
+                                populationSize:
+                                    neatRef.current.population?.length,
+                                inputNodes: 6,
+                                outputNodes: 3,
+                            })
 
                             // Check current player profile and sync generation number
                             try {
@@ -752,9 +807,8 @@ export function NEATTrainingProvider({
                         }
                     } else {
                         console.log(
-                            '⚠️ Authentication not ready, starting with fresh population'
+                            '⚠️ Auth not ready yet, creating temporary NEAT instance'
                         )
-
                         // Create default NEAT instance since auth is not ready
                         if (!neatRef.current) {
                             neatRef.current = new Neat(
@@ -787,8 +841,11 @@ export function NEATTrainingProvider({
                             )
 
                             console.log(
-                                '✅ Created default NEAT instance (auth not ready):',
-                                neatRef.current
+                                '✅ Created temporary NEAT instance (auth not ready):',
+                                {
+                                    populationSize:
+                                        neatRef.current.population?.length,
+                                }
                             )
                         }
 
@@ -800,11 +857,15 @@ export function NEATTrainingProvider({
                         }
                     }
                 } catch (error) {
-                    console.warn('Failed to initialize from backend:', error)
+                    console.error(
+                        '❌ Failed to initialize from backend:',
+                        error
+                    )
                     setBackendError('Failed to load initial data from backend')
 
                     // Create default NEAT instance as fallback
                     if (!neatRef.current) {
+                        console.log('🔧 Creating fallback NEAT instance...')
                         neatRef.current = new Neat(
                             6, // número de inputs
                             3, // número de outputs
@@ -831,32 +892,54 @@ export function NEATTrainingProvider({
                             }
                         })
 
-                        console.log(
-                            '✅ Created fallback default NEAT instance:',
-                            neatRef.current
-                        )
+                        console.log('✅ Created fallback NEAT instance:', {
+                            populationSize: neatRef.current.population?.length,
+                        })
                     }
                 }
+
+                console.log('🏁 Finishing NEAT initialization...', {
+                    hasNeatInstance: !!neatRef.current,
+                    populationSize: neatRef.current?.population?.length,
+                    generation: generation,
+                    neatRefCurrentType: typeof neatRef.current,
+                    neatRefCurrentKeys: neatRef.current
+                        ? Object.keys(neatRef.current)
+                        : 'null',
+                })
+
+                // Check neatRef.current right before setting states
+                console.log(
+                    '🔍 Final check before completing initialization:',
+                    {
+                        neatRefCurrent: neatRef.current,
+                        hasPopulation: !!neatRef.current?.population,
+                        populationLength: neatRef.current?.population?.length,
+                    }
+                )
 
                 setIsInitializing(false)
                 setHasInitialized(true)
                 initializationInProgress.current = false
-                console.log('✅ NEAT Training Context initialized')
+
+                // Check neatRef.current right after setting states
+                console.log(
+                    '✅ NEAT Training Context initialization complete',
+                    {
+                        neatRefCurrentAfterStateSet: !!neatRef.current,
+                        populationAfterStateSet:
+                            neatRef.current?.population?.length,
+                    }
+                )
             }
 
-            // Initialize after a short delay, regardless of auth status
-            const timer = setTimeout(initializeFromBackend, 1000)
-            return () => clearTimeout(timer)
+            // Initialize immediately instead of with delay
+            console.log('🚀 Calling initializeFromBackend immediately...')
+            initializeFromBackend()
         }
 
         return undefined
-    }, [
-        hasInitialized,
-        aiModels.isAuthReady,
-        aiModels,
-        getCurrentPlayerProfile,
-        // Removed backendError from dependencies to prevent infinite loops
-    ])
+    }, [hasInitialized]) // Only depend on hasInitialized
 
     const value: NEATTrainingContextType = {
         // Estados
