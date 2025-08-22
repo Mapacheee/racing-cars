@@ -6,7 +6,7 @@ export const NEAT_INPUT_NODES = [
     'sensor_center',
     'sensor_rightCenter',
     'sensor_right',
-    'speed_normalized', // velocidad actual normalizada
+    'speed_normalized',
 ]
 
 export const NEAT_OUTPUT_NODES = [

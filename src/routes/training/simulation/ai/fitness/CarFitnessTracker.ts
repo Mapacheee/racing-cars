@@ -39,7 +39,6 @@ export class CarFitnessTracker {
         this.sensorBonusAccumulator = 0
         this.trackDistanceTracker = new TrackDistanceTracker(waypoints)
 
-        // Initialize car in distance tracker
         this.trackDistanceTracker.resetCar(this.carId, startPosition)
     }
 
@@ -58,55 +57,44 @@ export class CarFitnessTracker {
         const now = Date.now()
         const deltaTime = (now - this.startTime) / 1000
 
-        // Update time alive
         this.metrics.timeAlive = deltaTime
 
-        // Calculate car's forward direction from velocity
         const forwardDirection =
             velocity.length() > 0.1
                 ? velocity.clone().normalize()
                 : this.getForwardDirectionToNextWaypoint(currentPosition)
 
-        // Update track-based distance tracking
         const trackingResult = this.trackDistanceTracker.updateCarPosition(
             this.carId,
             currentPosition,
             forwardDirection
         )
 
-        // Update distance metrics
         this.metrics.distanceTraveled = trackingResult.totalDistance
 
-        // Update progress tracking - only if car is making forward progress
         if (trackingResult.distanceDelta > 0.1) {
             this.lastProgressTime = now
         }
 
-        // Accumulate backward movement
         if (trackingResult.distanceDelta < -0.1) {
             this.metrics.backwardMovement += Math.abs(
                 trackingResult.distanceDelta
             )
         }
 
-        // Calculate current speed
         const currentSpeed = velocity.length()
         this.speedSamples.push(currentSpeed)
 
-        // Keep only the last 60 samples (approx 1 second at 60fps)
         if (this.speedSamples.length > 60) {
             this.speedSamples.shift()
         }
 
-        // Calculate average speed
         this.metrics.averageSpeed =
             this.speedSamples.reduce((a, b) => a + b, 0) /
             this.speedSamples.length
 
-        // Check waypoint progress
         this.updateCheckpoints(currentPosition)
 
-        // Debug logging (occasional)
         if (Math.random() < 0.001) {
             console.log(
                 `🏁 Car ${this.carId} - Distance: ${trackingResult.totalDistance.toFixed(1)}, ` +
@@ -117,9 +105,6 @@ export class CarFitnessTracker {
         }
     }
 
-    /**
-     * Get forward direction toward next waypoint when velocity is too low
-     */
     private getForwardDirectionToNextWaypoint(
         currentPosition: Vector3
     ): Vector3 {
@@ -137,7 +122,7 @@ export class CarFitnessTracker {
                 : new Vector3(0, 0, 1)
         }
 
-        return new Vector3(0, 0, 1) // Default forward
+        return new Vector3(0, 0, 1)
     }
 
     recordCollision(): void {
@@ -182,9 +167,6 @@ export class CarFitnessTracker {
         }
     }
 
-    /**
-     * Check waypoint progress (for checkpoint scoring)
-     */
     private updateCheckpoints(position: Vector3): void {
         const currentWaypoint = this.waypoints[this.currentWaypointIndex]
         if (currentWaypoint) {
@@ -229,32 +211,23 @@ export class CarFitnessTracker {
         return (this.metrics.checkpointsReached / this.waypoints.length) * 100
     }
 
-    /**
-     * Enhanced fitness calculation using track-based distance
-     */
     calculateFitness(): number {
         const now = Date.now()
         const timeAlive = (now - this.startTime) / 1000
 
-        // Distance bonus
         const distanceBonus = Math.min(this.metrics.distanceTraveled * 1.2, 60)
 
-        // Speed bonus
         const speedBonus = Math.min(this.metrics.averageSpeed * 3, 10)
 
-        // Sensor bonus
         const sensorBonus = Math.min(this.sensorBonusAccumulator, 8)
 
-        // Waypoint rewards
         const waypointPoints = this.metrics.checkpointsReached * 180
         const waypointBonus = Math.pow(this.metrics.checkpointsReached, 2) * 40
 
-        // Lap completion bonus
         const lapBonus = this.lapCompleted
             ? Math.max(120 - timeAlive / 2, 40)
             : 0
 
-        // Penalties
         const backwardPenalty = this.metrics.backwardMovement * -1.2
         const collisionPenalty = this.metrics.collisions * -30
         const inactivityPenalty = this.getInactivityPenalty() * 2
@@ -291,16 +264,13 @@ export class CarFitnessTracker {
     hasTimeout(): boolean {
         const now = Date.now()
         const timeSinceProgress = (now - this.lastProgressTime) / 1000
-        return timeSinceProgress > 5 // Slightly longer timeout with better tracking
+        return timeSinceProgress > 5
     }
 
     isLapCompleted(): boolean {
         return this.lapCompleted
     }
 
-    /**
-     * Reset tracking with new position
-     */
     reset(startPosition: Vector3): void {
         this.metrics = {
             distanceTraveled: 0,
@@ -322,9 +292,6 @@ export class CarFitnessTracker {
         this.trackDistanceTracker.resetCar(this.carId, startPosition)
     }
 
-    /**
-     * Clean up resources
-     */
     destroy(): void {
         this.trackDistanceTracker.removeCar(this.carId)
     }

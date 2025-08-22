@@ -11,7 +11,7 @@ import {
 import { Neat, methods } from 'neataptic'
 import { useRaceReset } from '../../../../lib/contexts/RaceResetContext'
 import { usePlayerProfileUpdates } from '../../../../lib/hooks/usePlayerProfileUpdates'
-import { useAIModels } from '../hooks/useAIModels'
+import { useNEATStored } from '../hooks/useNEATStored'
 import type { FitnessMetrics } from '../types/neat'
 
 interface CarState {
@@ -23,7 +23,7 @@ interface CarState {
 }
 
 interface NEATTrainingContextType {
-    // Estados
+    // Front states
     generation: number
     isTraining: boolean
     carStates: Map<string, CarState>
@@ -38,7 +38,7 @@ interface NEATTrainingContextType {
     isResetting: boolean
     backendError: string | null
 
-    // Funciones
+    // Front Functions
     handleFitnessUpdate: (
         carId: string,
         fitness: number,
@@ -49,6 +49,7 @@ interface NEATTrainingContextType {
     startTraining: () => void
     stopTraining: () => void
     restartGeneration: () => void
+    restartFromCurrentGeneration: () => void
     evolveToNextGeneration: () => void
 
     // Backend functions
@@ -56,7 +57,6 @@ interface NEATTrainingContextType {
     loadLatestGeneration: () => Promise<void>
     loadSpecificGeneration: (generationNumber: number) => Promise<void>
     resetAllSavedGenerations: () => Promise<void>
-    exportCurrentGeneration: () => Promise<void>
     clearBackendError: () => void
 }
 
@@ -104,33 +104,12 @@ export function NEATTrainingProvider({
     const [backendError, setBackendError] = useState<string | null>(null)
 
     const neatRef = useRef<any>(null)
-    if (!neatRef.current) {
-        neatRef.current = new Neat(
-            6, // número de inputs
-            3, // número de outputs
-            null,
-            {
-                mutation: methods.mutation.ALL,
-                popsize: 20,
-                mutationRate: 0.55,
-                elitism: 3,
-            }
-        )
-        neatRef.current.population.forEach((network: any) => {
-            for (let i = 0; i < 50; i++) {
-                network.mutate(
-                    methods.mutation.ALL[
-                        Math.floor(Math.random() * methods.mutation.ALL.length)
-                    ]
-                )
-            }
-        })
-    }
 
-    // Hook para manejar reset de la escena
+    // Don't create default NEAT instance immediately - wait for backend check
+
     const { triggerReset } = useRaceReset()
 
-    const aiModels = useAIModels({
+    const aiModels = useNEATStored({
         onError: error => {
             console.error('Backend error:', error.message)
             setBackendError(error.message)
@@ -141,7 +120,6 @@ export function NEATTrainingProvider({
         },
     })
 
-    // Hook for updating player profile in background
     const { updateAiGeneration, getCurrentPlayerProfile } =
         usePlayerProfileUpdates()
 
@@ -175,7 +153,7 @@ export function NEATTrainingProvider({
         []
     )
 
-    // Función para eliminar un carro (cuando choca)
+    // TODO: check this function behavior
     const handleCarElimination = useCallback((carId: string) => {
         setCarStates(prev => {
             const newState = new Map(prev)
@@ -207,7 +185,6 @@ export function NEATTrainingProvider({
         console.log('Training stopped')
     }, [])
 
-    // Reiniciar generación actual
     const restartGeneration = useCallback(() => {
         console.log(`🔄 Restarting generation ${generation}`)
 
@@ -228,22 +205,123 @@ export function NEATTrainingProvider({
         }, 100)
     }, [generation, onReset, triggerReset])
 
+    const restartFromCurrentGeneration = useCallback(() => {
+        console.log(
+            `🔄 Restarting generation ${generation} with new population`
+        )
+
+        // Create a new NEAT population for the current generation
+        neatRef.current = new Neat(
+            6, // número de inputs
+            3, // número de outputs
+            null,
+            {
+                mutation: methods.mutation.ALL,
+                popsize: 20,
+                mutationRate: 0.55,
+                elitism: 3,
+            }
+        )
+
+        // Apply initial mutations to the new population
+        neatRef.current.population.forEach((network: any) => {
+            for (let i = 0; i < 50; i++) {
+                network.mutate(
+                    methods.mutation.ALL[
+                        Math.floor(Math.random() * methods.mutation.ALL.length)
+                    ]
+                )
+            }
+        })
+
+        // Reset states but keep the same generation number
+        setCarStates(new Map())
+        setIsTraining(false)
+        setBestFitness(0)
+        simulationActive.current = false
+
+        triggerReset()
+        setTimeout(() => {
+            simulationActive.current = true
+            console.log(
+                `Generation ${generation} restarted with fresh population - all cars reset to starting positions`
+            )
+            if (onReset) {
+                onReset()
+            }
+        }, 100)
+    }, [generation, onReset, triggerReset])
+
     const evolveToNextGeneration = useCallback(async () => {
         console.log('🔥 EVOLVE BUTTON CLICKED! Current generation:', generation)
 
-        // Save current generation before evolving
         if (aiModels.isAuthReady && carStates.size > 0) {
             try {
-                console.log('💾 Saving current generation before evolution...')
-                const fitnessMap = new Map<string, { fitness: number }>()
-                carStates.forEach((carState, carId) => {
-                    fitnessMap.set(carId, { fitness: carState.fitness })
-                })
-                await aiModels.saveGeneration(
-                    generation,
-                    neatRef.current,
-                    fitnessMap
+                console.log(
+                    '💾 Checking current backend generation before saving...'
                 )
+
+                // Check if this generation is already saved in the backend
+                const latestGeneration = await aiModels.loadLatestGeneration()
+                if (
+                    latestGeneration &&
+                    latestGeneration.generationNumber >= generation
+                ) {
+                    console.log(
+                        `⚠️ Generation ${generation} already exists in backend (latest: ${latestGeneration.generationNumber}). Skipping save before evolution.`
+                    )
+                } else {
+                    console.log(
+                        '💾 Saving current generation before evolution...'
+                    )
+
+                    // Export population data using neataptic's export method
+                    const neatExportRaw = neatRef.current.export()
+                    // Ensure networkData is a JSON object, not a string
+                    const neatExportData =
+                        typeof neatExportRaw === 'string'
+                            ? JSON.parse(neatExportRaw)
+                            : neatExportRaw
+
+                    const fitnessMap = new Map<string, { fitness: number }>()
+                    carStates.forEach((carState, carId) => {
+                        fitnessMap.set(carId, { fitness: carState.fitness })
+                    })
+
+                    // Create NEAT config from current instance
+                    const neatConfig = {
+                        populationSize: neatRef.current.popsize,
+                        mutationRate: 0.55,
+                        elitism: 3,
+                        inputNodes: 6,
+                        outputNodes: 3,
+                    }
+
+                    await aiModels.saveGeneration(
+                        generation,
+                        neatExportData,
+                        neatConfig
+                    )
+
+                    // Verify the save was successful
+                    const verifyGeneration =
+                        await aiModels.loadLatestGeneration()
+                    if (!verifyGeneration) {
+                        console.warn(
+                            `Generation save verification failed: No generation data returned from backend`
+                        )
+                    } else if (
+                        verifyGeneration.generationNumber !== generation
+                    ) {
+                        console.warn(
+                            `Generation save verification failed. Expected: ${generation}, Got: ${verifyGeneration.generationNumber}`
+                        )
+                    } else {
+                        console.log(
+                            `✅ Generation ${generation} verified successfully in backend`
+                        )
+                    }
+                }
             } catch (error) {
                 console.warn(
                     'Failed to save generation before evolution:',
@@ -252,14 +330,12 @@ export function NEATTrainingProvider({
             }
         }
 
-        // 1. Asignar fitness a cada red
         const carStatesArray = Array.from(carStates.values())
         neatRef.current.population.forEach((network: any, i: number) => {
             const carState = carStatesArray[i]
             network.score = carState ? carState.fitness : 0
         })
 
-        // 2. Evolucionar la población
         neatRef.current.evolve().then(async () => {
             const newGeneration = generation + 1
             setGeneration(newGeneration)
@@ -267,7 +343,6 @@ export function NEATTrainingProvider({
             setIsTraining(false)
             simulationActive.current = false
 
-            // Update player profile with new generation
             try {
                 await updateAiGeneration(newGeneration)
             } catch (profileError) {
@@ -294,7 +369,26 @@ export function NEATTrainingProvider({
         setIsSaving(true)
         setBackendError(null)
         try {
+            console.log(
+                '📤 Checking current backend generation before saving...'
+            )
+
+            // Check if this generation is already saved in the backend
+            const latestGeneration = await aiModels.loadLatestGeneration()
+            if (
+                latestGeneration &&
+                latestGeneration.generationNumber >= generation
+            ) {
+                console.log(
+                    `⚠️ Generation ${generation} already exists in backend (latest: ${latestGeneration.generationNumber}). Skipping save.`
+                )
+                return
+            }
+
             console.log('📤 Saving generation to backend...')
+
+            // Export population data using neataptic's export method
+            const neatExportData = neatRef.current.export()
 
             // Convert current car states to simple fitness map
             const fitnessMap = new Map<string, { fitness: number }>()
@@ -302,20 +396,48 @@ export function NEATTrainingProvider({
                 fitnessMap.set(carId, { fitness: carState.fitness })
             })
 
+            // Create NEAT config from current instance
+            const neatConfig = {
+                populationSize: neatRef.current.popsize,
+                mutationRate: 0.55,
+                elitism: 3,
+                inputNodes: 6,
+                outputNodes: 3,
+            }
+
             await aiModels.saveGeneration(
                 generation,
-                neatRef.current,
-                fitnessMap
+                neatExportData,
+                neatConfig
             )
 
-            // Update player profile with new generation
+            // Verify the save was successful by checking the backend again
+            // Add a small delay to account for potential backend processing time
+            await new Promise(resolve => setTimeout(resolve, 100))
+
+            const verifyGeneration = await aiModels.loadLatestGeneration()
+            if (!verifyGeneration) {
+                console.warn(
+                    `Generation save verification failed: No generation data returned from backend`
+                )
+            } else if (verifyGeneration.generationNumber !== generation) {
+                console.warn(
+                    `Generation save verification failed. Expected: ${generation}, Got: ${verifyGeneration.generationNumber}`
+                )
+            } else {
+                console.log(
+                    `✅ Generation ${generation} verified successfully in backend`
+                )
+            }
+
+            // Update player profile with new generation using service instead of auth
             try {
                 await updateAiGeneration(generation)
             } catch (profileError) {
                 console.warn('Failed to update player profile:', profileError)
             }
 
-            console.log('✅ Generation saved successfully')
+            console.log('✅ Generation saved and verified successfully')
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : 'Unknown error'
@@ -339,10 +461,23 @@ export function NEATTrainingProvider({
 
             const response = await aiModels.loadLatestGeneration()
             if (response) {
-                console.log('� Converting backend data to neataptic format...')
-                const restoredNeat = await aiModels.backendToNeataptic(response)
+                console.log('🔄 Importing population data using neataptic...')
 
-                neatRef.current = restoredNeat
+                // Create new NEAT instance with loaded config
+                neatRef.current = new Neat(
+                    response.neatConfig.inputNodes,
+                    response.neatConfig.outputNodes,
+                    null,
+                    {
+                        mutation: methods.mutation.ALL,
+                        popsize: response.neatConfig.populationSize,
+                        mutationRate: response.neatConfig.mutationRate,
+                        elitism: response.neatConfig.elitism,
+                    }
+                )
+
+                // Import the population data using neataptic's import method
+                neatRef.current.import(response.neatExportData)
                 setGeneration(response.generationNumber)
 
                 // Reset simulation state
@@ -385,12 +520,24 @@ export function NEATTrainingProvider({
                 const response = await aiModels.loadGeneration(generationNumber)
                 if (response) {
                     console.log(
-                        '🔄 Converting backend data to neataptic format...'
+                        '🔄 Importing population data using neataptic...'
                     )
-                    const restoredNeat =
-                        await aiModels.backendToNeataptic(response)
 
-                    neatRef.current = restoredNeat
+                    // Create new NEAT instance with loaded config
+                    neatRef.current = new Neat(
+                        response.neatConfig.inputNodes,
+                        response.neatConfig.outputNodes,
+                        null,
+                        {
+                            mutation: methods.mutation.ALL,
+                            popsize: response.neatConfig.populationSize,
+                            mutationRate: response.neatConfig.mutationRate,
+                            elitism: response.neatConfig.elitism,
+                        }
+                    )
+
+                    // Import the population data using neataptic's import method
+                    neatRef.current.import(response.neatExportData)
                     setGeneration(response.generationNumber)
 
                     // Reset simulation state
@@ -482,24 +629,6 @@ export function NEATTrainingProvider({
         }
     }, [aiModels, triggerReset, updateAiGeneration])
 
-    const exportCurrentGeneration = useCallback(async () => {
-        if (!aiModels.isAuthReady) {
-            setBackendError('No authentication available')
-            return
-        }
-
-        try {
-            console.log('📤 Exporting current generation...')
-            await aiModels.exportNetworks({ generationNumber: generation })
-            console.log('✅ Generation exported successfully')
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : 'Unknown error'
-            setBackendError(`Failed to export generation: ${errorMessage}`)
-            console.error('❌ Error exporting generation:', error)
-        }
-    }, [aiModels, generation])
-
     const clearBackendError = useCallback(() => {
         setBackendError(null)
     }, [])
@@ -510,6 +639,12 @@ export function NEATTrainingProvider({
             initializationInProgress.current = true
 
             const initializeFromBackend = async () => {
+                // console.log('🚀 Starting NEAT initialization...', {
+                //     isAuthReady: aiModels.isAuthReady,
+                //     hasInitialized,
+                //     initializationInProgress: initializationInProgress.current,
+                // })
+
                 try {
                     // If authentication is ready, try to load from backend
                     if (aiModels.isAuthReady) {
@@ -530,12 +665,26 @@ export function NEATTrainingProvider({
 
                             if (response) {
                                 console.log(
-                                    '🔄 Converting backend data to neataptic format...'
+                                    '🔄 Importing population data using neataptic...'
                                 )
-                                const restoredNeat =
-                                    await aiModels.backendToNeataptic(response)
 
-                                neatRef.current = restoredNeat
+                                // Create new NEAT instance with loaded config
+                                neatRef.current = new Neat(
+                                    response.neatConfig.inputNodes,
+                                    response.neatConfig.outputNodes,
+                                    null,
+                                    {
+                                        mutation: methods.mutation.ALL,
+                                        popsize:
+                                            response.neatConfig.populationSize,
+                                        mutationRate:
+                                            response.neatConfig.mutationRate,
+                                        elitism: response.neatConfig.elitism,
+                                    }
+                                )
+
+                                // Import the population data using neataptic's import method
+                                neatRef.current.import(response.neatExportData)
                                 setGeneration(response.generationNumber)
                                 console.log(
                                     `✅ Restored generation ${response.generationNumber} from backend`
@@ -544,6 +693,41 @@ export function NEATTrainingProvider({
                         } else {
                             console.log(
                                 '🆕 No existing data found, starting with fresh population'
+                            )
+
+                            // Create default NEAT instance since no backend data exists
+                            neatRef.current = new Neat(
+                                6, // número de inputs
+                                3, // número de outputs
+                                null,
+                                {
+                                    mutation: methods.mutation.ALL,
+                                    popsize: 20,
+                                    mutationRate: 0.55,
+                                    elitism: 3,
+                                }
+                            )
+
+                            // Apply initial mutations to create diversity
+                            neatRef.current.population.forEach(
+                                (network: any) => {
+                                    for (let i = 0; i < 50; i++) {
+                                        network.mutate(
+                                            methods.mutation.ALL[
+                                                Math.floor(
+                                                    Math.random() *
+                                                        methods.mutation.ALL
+                                                            .length
+                                                )
+                                            ]
+                                        )
+                                    }
+                                }
+                            )
+
+                            console.log(
+                                '✅ Created default NEAT instance:',
+                                neatRef.current
                             )
 
                             // Check current player profile and sync generation number
@@ -570,6 +754,44 @@ export function NEATTrainingProvider({
                         console.log(
                             '⚠️ Authentication not ready, starting with fresh population'
                         )
+
+                        // Create default NEAT instance since auth is not ready
+                        if (!neatRef.current) {
+                            neatRef.current = new Neat(
+                                6, // número de inputs
+                                3, // número de outputs
+                                null,
+                                {
+                                    mutation: methods.mutation.ALL,
+                                    popsize: 20,
+                                    mutationRate: 0.55,
+                                    elitism: 3,
+                                }
+                            )
+
+                            // Apply initial mutations to create diversity
+                            neatRef.current.population.forEach(
+                                (network: any) => {
+                                    for (let i = 0; i < 50; i++) {
+                                        network.mutate(
+                                            methods.mutation.ALL[
+                                                Math.floor(
+                                                    Math.random() *
+                                                        methods.mutation.ALL
+                                                            .length
+                                                )
+                                            ]
+                                        )
+                                    }
+                                }
+                            )
+
+                            console.log(
+                                '✅ Created default NEAT instance (auth not ready):',
+                                neatRef.current
+                            )
+                        }
+
                         if (backendError) {
                             console.warn(
                                 'Backend error detected:',
@@ -580,6 +802,40 @@ export function NEATTrainingProvider({
                 } catch (error) {
                     console.warn('Failed to initialize from backend:', error)
                     setBackendError('Failed to load initial data from backend')
+
+                    // Create default NEAT instance as fallback
+                    if (!neatRef.current) {
+                        neatRef.current = new Neat(
+                            6, // número de inputs
+                            3, // número de outputs
+                            null,
+                            {
+                                mutation: methods.mutation.ALL,
+                                popsize: 20,
+                                mutationRate: 0.55,
+                                elitism: 3,
+                            }
+                        )
+
+                        // Apply initial mutations to create diversity
+                        neatRef.current.population.forEach((network: any) => {
+                            for (let i = 0; i < 50; i++) {
+                                network.mutate(
+                                    methods.mutation.ALL[
+                                        Math.floor(
+                                            Math.random() *
+                                                methods.mutation.ALL.length
+                                        )
+                                    ]
+                                )
+                            }
+                        })
+
+                        console.log(
+                            '✅ Created fallback default NEAT instance:',
+                            neatRef.current
+                        )
+                    }
                 }
 
                 setIsInitializing(false)
@@ -599,24 +855,8 @@ export function NEATTrainingProvider({
         aiModels.isAuthReady,
         aiModels,
         getCurrentPlayerProfile,
-        backendError,
+        // Removed backendError from dependencies to prevent infinite loops
     ])
-
-    // Backup initialization timeout to prevent infinite loading
-    useEffect(() => {
-        const backupInitTimer = setTimeout(() => {
-            if (isInitializing && !hasInitialized) {
-                console.warn(
-                    '⚠️ Backup initialization triggered - forcing context to initialize'
-                )
-                setIsInitializing(false)
-                setHasInitialized(true)
-                initializationInProgress.current = false
-            }
-        }, 5000) // 5 second timeout
-
-        return () => clearTimeout(backupInitTimer)
-    }, [isInitializing, hasInitialized])
 
     const value: NEATTrainingContextType = {
         // Estados
@@ -641,6 +881,7 @@ export function NEATTrainingProvider({
         startTraining,
         stopTraining,
         restartGeneration,
+        restartFromCurrentGeneration,
         evolveToNextGeneration,
 
         // Backend functions
@@ -648,7 +889,6 @@ export function NEATTrainingProvider({
         loadLatestGeneration,
         loadSpecificGeneration,
         resetAllSavedGenerations,
-        exportCurrentGeneration,
         clearBackendError,
     }
 

@@ -15,37 +15,46 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
     const [, forceUpdate] = useState({})
     const trackUpdateKey = useTrackUpdates()
     const neatContext = useNEATTraining()
+    const [aiCars, setAiCars] = useState<any[]>([])
 
-    if (!neatContext) {
-        return <div>Loading NEAT context...</div>
-    }
-
+    // Extract context data with safe defaults
     const {
         generation,
         carStates,
         handleFitnessUpdate,
         handleCarElimination,
         neatRef,
-    } = neatContext
+        isLoading,
+    } = neatContext || {}
 
-    const [aiCars, setAiCars] = useState<any[]>([]);
+    const trackId = track?.id || 'main_circuit'
 
-    const trackId = track?.id || 'main_circuit';
+    // Check if NEAT is ready to generate cars
+    const isNeatReady = neatContext && !isLoading && neatRef?.current
 
     useEffect(() => {
-        if (!track || !track.waypoints || track.waypoints.length < 2) return;
-        // Obtén el primer y segundo waypoint
-        const firstWaypoint = track.waypoints[0];
-        const secondWaypoint = track.waypoints[1];
-        // Calcula posición y rotación
-        const dx = secondWaypoint.x - firstWaypoint.x;
-        const dz = secondWaypoint.z - firstWaypoint.z;
-        const rotation = Math.atan2(dx, dz);
-        // Genera autos usando estos datos
-        const allGenomes = neatRef?.current?.population || [];
+        if (!track || !track.waypoints || track.waypoints.length < 2) return
+        if (!isNeatReady || !neatRef?.current?.population) {
+            console.log(
+                'NEAT population not ready yet, skipping car generation'
+            )
+            return
+        }
+
+        // Get the first and second waypoint
+        const firstWaypoint = track.waypoints[0]
+        const secondWaypoint = track.waypoints[1]
+
+        // Calculate position and rotation
+        const dx = secondWaypoint.x - firstWaypoint.x
+        const dz = secondWaypoint.z - firstWaypoint.z
+        const rotation = Math.atan2(dx, dz)
+
+        // Generate cars using NEAT population
+        const allGenomes = neatRef.current.population || []
         const config: any = {
             trackId,
-            carCount: 20,
+            carCount: Math.min(20, allGenomes.length), // Use actual population size
             colors: [
                 'red',
                 'blue',
@@ -75,19 +84,32 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
                 position: [firstWaypoint.x, -0.5, firstWaypoint.z],
                 rotation,
             },
-        };
-        let newCars = generateAICars(config);
+        }
+
+        let newCars = generateAICars(config)
         if (config.spawnOverride) {
             newCars = newCars.map((car: any) => ({
                 ...car,
                 position: config.spawnOverride.position,
                 rotation: config.spawnOverride.rotation,
-            }));
+            }))
         }
-        setAiCars(newCars);
-        forceUpdate({});
-    }, [generation, trackId, trackUpdateKey, resetCounter, neatRef, track]);
 
+        console.log(
+            `Generated ${newCars.length} AI cars for generation ${generation}`
+        )
+        setAiCars(newCars)
+        forceUpdate({})
+    }, [
+        generation,
+        trackId,
+        trackUpdateKey,
+        resetCounter,
+        neatRef,
+        track,
+        isLoading,
+        isNeatReady,
+    ])
 
     return (
         <TrackScene
@@ -100,22 +122,26 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
             enablePhysics={true}
             enableControls={true}
         >
-            {/* render ai cars */}
-            {aiCars.map(carData => {
-                const carState = carStates.get(carData.id)
-                const isCarEliminated = carState?.isEliminated || false
+            {/* render ai cars only when NEAT is ready */}
+            {isNeatReady &&
+                carStates &&
+                handleFitnessUpdate &&
+                handleCarElimination &&
+                aiCars.map(carData => {
+                    const carState = carStates.get(carData.id)
+                    const isCarEliminated = carState?.isEliminated || false
 
-                return (
-                    <Suspense key={carData.id} fallback={null}>
-                        <AICar
-                            carData={carData}
-                            onFitnessUpdate={handleFitnessUpdate}
-                            onCarElimination={handleCarElimination}
-                            isEliminated={isCarEliminated}
-                        />
-                    </Suspense>
-                )
-            })}
+                    return (
+                        <Suspense key={carData.id} fallback={null}>
+                            <AICar
+                                carData={carData}
+                                onFitnessUpdate={handleFitnessUpdate}
+                                onCarElimination={handleCarElimination}
+                                isEliminated={isCarEliminated}
+                            />
+                        </Suspense>
+                    )
+                })}
         </TrackScene>
     )
 }

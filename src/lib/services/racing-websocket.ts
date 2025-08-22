@@ -25,7 +25,6 @@ class RacingWebSocketService {
     private readonly namespace = '/racing-stream'
 
     connect(token: string): Socket {
-        console.log(this.baseUrl)
         if (this.socket?.connected) {
             return this.socket
         }
