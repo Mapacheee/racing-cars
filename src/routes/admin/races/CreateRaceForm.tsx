@@ -99,7 +99,7 @@ export function CreateRaceForm() {
                         <button
                             onClick={() => {
                                 setError(null)
-                                // Retry loading data
+
                                 const loadData = async () => {
                                     try {
                                         setLoading(true)

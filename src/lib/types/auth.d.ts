@@ -5,7 +5,6 @@ export type Player = {
     token: string
 }
 
-// Backend entity response (without token)
 export type PlayerProfile = {
     id: string
     username: string

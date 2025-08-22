@@ -39,17 +39,14 @@ export default function AICar({
     const { showCollisions } = useCanvasSettings()
     const neatContext = useNEATTraining()
 
-    // State declarations - must be called before any conditional logic
     const [carPosition, setCarPosition] = useState<Vector3>(
         new Vector3(...carData.position)
     )
     const [carHeading, setCarHeading] = useState<number>(carData.rotation || 0)
     const [quietTime, setQuietTime] = useState(0)
 
-    // Check if NEAT context is ready
     const isNeatReady = neatContext && neatContext.neatRef?.current
 
-    // Only destructure if context exists
     const { isTraining, neatRef } = neatContext || {}
 
     const track = TRACKS[carData.trackId || 'circuito 1']
@@ -93,7 +90,6 @@ export default function AICar({
         }
     }, [carData.position, carData.rotation, track, fitnessTracker])
 
-    // Handler de colisión física con muros
     const handleCollisionEnter = (_event: any) => {
         if (!isEliminated && isTraining) {
             if (onCarElimination) onCarElimination(carData.id)
@@ -274,7 +270,6 @@ export default function AICar({
         isTraining,
     ])
 
-    // Datos en tiempo real para renderizado y sensores
     const realTimeCarData = {
         position: carPosition,
         heading: carHeading,
@@ -288,8 +283,6 @@ export default function AICar({
 
     const sensorAngleOffset = 2 * Math.PI - (carData.rotation || 0)
 
-    // Renderizado del auto y sensores
-    // Don't render if NEAT is not ready to prevent hooks violations
     if (!isNeatReady) {
         return null
     }

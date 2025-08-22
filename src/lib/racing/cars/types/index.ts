@@ -1,4 +1,3 @@
-// shared car types for racing system
 export interface BaseCar {
     id: string
     position: [number, number, number]
@@ -7,12 +6,10 @@ export interface BaseCar {
     trackId?: string
 }
 
-// car specific to AI training (extends BaseCar with AI-specific data)
 export interface AICar extends BaseCar {
-    genome?: any  // NEAT genome for AI training - kept as any to avoid NEAT dependency in shared lib
+    genome?: any
 }
 
-// car physics and collision configuration
 export interface CarPhysicsConfig {
     angularDamping: number
     linearDamping: number
@@ -30,11 +27,10 @@ export interface CarCollisionGroups {
     track: number
 }
 
-// car control and movement
 export interface CarControls {
-    throttle: number    // 0-1 forward acceleration
-    brake: number      // 0-1 braking force  
-    steering: number   // -1 to 1 steering angle
+    throttle: number // 0-1 forward acceleration
+    brake: number // 0-1 braking force
+    steering: number // -1 to 1 steering angle
 }
 
 export interface CarState {
@@ -45,7 +41,6 @@ export interface CarState {
     controls: CarControls
 }
 
-// sensor system for collision detection and AI input
 export interface SensorReading {
     left: number
     leftCenter: number
@@ -77,5 +72,5 @@ export interface SensorVisualizationConfig {
         noObstacle: string
         obstacle: string
     }
-    sensorAngleOffset?: number;
+    sensorAngleOffset?: number
 }

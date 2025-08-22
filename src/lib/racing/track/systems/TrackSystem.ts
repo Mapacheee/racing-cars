@@ -1,4 +1,4 @@
-import type { Waypoint, Track, TrackPiece, Wall } from '../types/index'
+import type { Waypoint, Track } from '../types/index'
 import {
     generateProceduralControlPoints,
     generateSplineRaceTrack,
@@ -6,14 +6,14 @@ import {
     SplinePath,
 } from './SplineTrackGenerator'
 
-// track geometry configuration
+export const DEFAULT_TRACK_SEED: number = 12345 as const
+
 export const ROAD_GEOMETRY = {
     width: 6,
     height: 0.3,
     length: 2,
 } as const
 
-// track generation settings
 export const TRACK_GENERATION = {
     segmentsPerSection: 20,
     wallLength: 4,
@@ -52,7 +52,6 @@ function generateMainTrack(): Track {
     )
 }
 
-// Generate a random track
 export function generateRandomTrack(
     id: string,
     name: string,
@@ -86,15 +85,12 @@ export function generateRandomTrack(
     return track
 }
 
-// main track definition - generated procedurally
 const MAIN_TRACK: Track = generateMainTrack()
 
-// exported tracks registry
 export const TRACKS: Record<string, Track> = {
     main_circuit: MAIN_TRACK,
 }
 
-// Regenerate main track with new seed
 export function regenerateMainTrack(seed?: number): Track {
     const controlPoints = generateProceduralControlPoints({
         numControlPoints: TRACK_GENERATION.numControlPoints,
@@ -102,7 +98,7 @@ export function regenerateMainTrack(seed?: number): Track {
         radiusVariation: TRACK_GENERATION.radiusVariation,
         centerX: 0,
         centerY: 0,
-        seed: seed ?? 12345, // use fixed seed 12345 for reproducible default track
+        seed: seed ?? DEFAULT_TRACK_SEED,
     })
 
     const splineTrack = generateSplineRaceTrack(
@@ -122,15 +118,12 @@ export function regenerateMainTrack(seed?: number): Track {
             'Main Circuit',
             controlPoints
         ),
-        seed: seed ?? 12345,
+        seed: seed ?? DEFAULT_TRACK_SEED,
     }
 
-    // Update the tracks registry
     TRACKS['main_circuit'] = newTrack
 
-    // Notify listeners about track update
     try {
-        // Dynamic import to avoid circular dependencies
         import(
             '../../../../routes/training/simulation/utils/TrackUpdateEvent'
         ).then(module => {
@@ -143,7 +136,6 @@ export function regenerateMainTrack(seed?: number): Track {
     return newTrack
 }
 
-// Create a spline path for distance tracking from a track
 export function createSplinePathFromTrack(track: Track): SplinePath | null {
     if (!track.splineData) {
         console.warn('Track does not have spline data for distance tracking')
@@ -153,10 +145,8 @@ export function createSplinePathFromTrack(track: Track): SplinePath | null {
     return new SplinePath(track.splineData.centralPath)
 }
 
-// Re-export spline system for car tracking
 export { SplinePath, CarTracker } from './SplineTrackGenerator'
 
-// Utility functions for track navigation and waypoint calculations
 export function getDistanceBetweenPoints(
     p1: { x: number; z: number },
     p2: { x: number; z: number }
@@ -207,19 +197,4 @@ export function findNextWaypoint(
     }
 
     return currentWaypointIndex
-}
-
-// Legacy road generation for backward compatibility (deprecated - use spline system)
-export function generateRoad(_waypoints: Waypoint[]): TrackPiece[] {
-    console.warn(
-        'generateRoad is deprecated. Use spline-based track generation instead.'
-    )
-    return []
-}
-
-export function generateTrackWalls(_waypoints: Waypoint[]): Wall[] {
-    console.warn(
-        'generateTrackWalls is deprecated. Use spline-based track generation instead.'
-    )
-    return []
 }

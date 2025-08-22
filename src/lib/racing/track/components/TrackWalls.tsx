@@ -43,12 +43,11 @@ function groupStraightWalls(walls: Wall[]): Wall[] {
     return grouped
 }
 
-// track boundary walls component with optional collision physics
 export default function TrackWalls({
     walls,
     visible = true,
     showColors = true,
-    enablePhysics = true,
+    enablePhysics: _enablePhysics = true,
 }: TrackWallsProps) {
     const groupedWalls = groupStraightWalls(walls)
     return (

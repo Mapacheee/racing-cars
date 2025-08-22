@@ -13,7 +13,6 @@ export function useFpsCounter() {
             const currentTime = performance.now()
 
             if (currentTime - lastTime >= 1000) {
-                // Update every second
                 const currentFPS = Math.round(
                     (frameCount * 1000) / (currentTime - lastTime)
                 )

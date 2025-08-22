@@ -17,7 +17,6 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
     const neatContext = useNEATTraining()
     const [aiCars, setAiCars] = useState<any[]>([])
 
-    // Extract context data with safe defaults
     const {
         generation,
         carStates,
@@ -27,18 +26,16 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
         isLoading,
     } = neatContext || {}
 
-    // Debug neatRef reference
     console.log('🔍 CarScene neatRef reference debug:', {
         hasNeatContext: !!neatContext,
         hasNeatRef: !!neatRef,
-        neatRefReference: neatRef, // Log the actual reference
+        neatRefReference: neatRef,
         neatRefCurrent: neatRef?.current,
         isLoadingValue: isLoading,
     })
 
     const trackId = track?.id || 'main_circuit'
 
-    // Check if NEAT is ready to generate cars
     const isNeatReady = !!(neatContext && !isLoading && neatRef?.current)
 
     useEffect(() => {
@@ -53,7 +50,6 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
             neatRefCurrentPopulation: neatRef?.current?.population?.length,
         })
 
-        // More detailed logging about why NEAT might not be ready
         if (!neatContext) {
             console.log('❌ CarScene: neatContext is null/undefined')
             return
@@ -86,20 +82,17 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
 
         console.log('✅ CarScene: All conditions met, generating cars...')
 
-        // Get the first and second waypoint
         const firstWaypoint = track.waypoints[0]
         const secondWaypoint = track.waypoints[1]
 
-        // Calculate position and rotation
         const dx = secondWaypoint.x - firstWaypoint.x
         const dz = secondWaypoint.z - firstWaypoint.z
         const rotation = Math.atan2(dx, dz)
 
-        // Generate cars using NEAT population
         const allGenomes = neatRef.current.population || []
         const config: any = {
             trackId,
-            carCount: Math.min(20, allGenomes.length), // Use actual population size
+            carCount: Math.min(20, allGenomes.length),
             colors: [
                 'red',
                 'blue',

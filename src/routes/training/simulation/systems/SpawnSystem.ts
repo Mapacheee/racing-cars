@@ -18,12 +18,10 @@ export function calculateSpawnTransform(track: Track): {
     const firstWaypoint = track.waypoints[0]
     const secondWaypoint = track.waypoints[1]
 
-    // Calculate rotation towards the second waypoint for correct initial direction
     const dx = secondWaypoint.x - firstWaypoint.x
     const dz = secondWaypoint.z - firstWaypoint.z
     const rotation = Math.atan2(dx, dz)
 
-    // Calculate left offset perpendicular to the track direction
     const leftOffsetDistance = -1.0 // Distance to move cars to the left
     const leftOffsetX = -Math.cos(rotation) * leftOffsetDistance // Perpendicular to track direction
     const leftOffsetZ = Math.sin(rotation) * leftOffsetDistance
@@ -44,10 +42,10 @@ export function generateAICars(config: {
     colors: string[]
     useNEAT: boolean
     generation: number
-    genomes?: any[] // Genomas evolucionados opcionales
+    genomes?: any[]
 }): AICar[] {
     const track = TRACKS[config.trackId] || TRACKS['main_circuit']
-    // Forzar formación 'single' para que todos los autos IA spawneen en el mismo lugar
+
     const singleConfig = { ...config, formation: 'single' as const }
     const baseCars = generateBaseCars(singleConfig, track)
     return baseCars.map((baseCar: any, i: number) => {

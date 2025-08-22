@@ -143,26 +143,20 @@ export class TrackDistanceTracker {
         segment: TrackSegment,
         segmentIndex: number
     ): ProjectionResult {
-        // Vector from segment start to point
         const pointVector = point.clone().sub(segment.startPoint)
 
-        // Project onto segment direction
         const segmentVector = segment.endPoint.clone().sub(segment.startPoint)
         const dot = pointVector.dot(segmentVector)
 
-        // Calculate parameter t along segment (0 = start, 1 = end)
         let t = segment.length > 0 ? dot / (segment.length * segment.length) : 0
         t = Math.max(0, Math.min(1, t)) // clamp to [0, 1]
 
-        // Find closest point on segment
         const closestPoint = segment.startPoint
             .clone()
             .add(segmentVector.clone().multiplyScalar(t))
 
-        // Calculate distance from point to track
         const distanceToTrack = point.distanceTo(closestPoint)
 
-        // Calculate progress along entire track
         const progress =
             this.trackData.cumulativeDistances[segmentIndex] +
             t * segment.length
@@ -190,7 +184,6 @@ export class TrackDistanceTracker {
         distanceFromTrack: number
         progress: number
     } {
-        // Get or create car state
         let carState = this.carStates.get(carId)
         if (!carState) {
             const initialProjection = this.projectPositionOntoTrack(position, 0)
@@ -203,34 +196,28 @@ export class TrackDistanceTracker {
             this.carStates.set(carId, carState)
         }
 
-        // Project current position onto track
         const projection = this.projectPositionOntoTrack(
             position,
             carState.lastSegmentIndex
         )
 
-        // Calculate progress delta with wrap handling
         let delta = projection.progress - carState.lastProgress
 
-        // Handle track wrap (crossing finish line)
         if (delta < -this.trackData.totalLength / 2) {
             delta += this.trackData.totalLength // wrapped forward
         } else if (delta > this.trackData.totalLength / 2) {
             delta -= this.trackData.totalLength // wrapped backward
         }
 
-        // Determine direction based on car's forward vector vs track direction
         const trackDirection =
             this.trackData.segments[projection.segmentIndex].direction
         const directionDot = forwardDirection.dot(trackDirection)
-        const isGoingForward = directionDot > 0.4 // threshold to avoid noise
+        const isGoingForward = directionDot > 0.4
 
-        // Apply direction to delta (negative if going backward)
         const signedDelta = isGoingForward ? Math.abs(delta) : -Math.abs(delta)
 
-        // Update car state
         carState.lastProgress = projection.progress
-        carState.totalAccumulated += Math.abs(signedDelta) // always accumulate positive distance
+        carState.totalAccumulated += Math.abs(signedDelta)
         carState.lastSegmentIndex = projection.segmentIndex
         carState.isGoingForward = isGoingForward
 

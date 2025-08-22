@@ -3,12 +3,12 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 export type CarState = {
     speed: number
     position: [number, number, number]
-    heading: number
+    headingRadians: number
     velocity: number
     collisions: number
     setSpeed: (speed: number) => void
     setPosition: (pos: [number, number, number]) => void
-    setHeading: (heading: number) => void
+    setHeadingRadians: (heading: number) => void
     setVelocity: (velocity: number) => void
     incrementCollisions: () => void
     resetCollisions: () => void
@@ -21,7 +21,7 @@ export function CarProvider({ children }: { children: ReactNode }) {
     const [position, setPosition] = useState<[number, number, number]>([
         0, 0, 0,
     ])
-    const [heading, setHeading] = useState(0) // radians
+    const [headingRadians, setHeadingRadians] = useState(0)
     const [velocity, setVelocity] = useState(0)
     const [collisions, setCollisions] = useState(0)
 
@@ -35,8 +35,8 @@ export function CarProvider({ children }: { children: ReactNode }) {
                 setSpeed,
                 position,
                 setPosition,
-                heading,
-                setHeading,
+                headingRadians,
+                setHeadingRadians,
                 velocity,
                 setVelocity,
                 collisions,

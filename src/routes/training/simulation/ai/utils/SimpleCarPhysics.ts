@@ -1,14 +1,3 @@
-/**
- * Simexport class SimpleCarPhysics {
-    // Physics constants - tuned to overcome ground friction
-    private static readonly MAX_SPEED = 25.0
-    private static readonly ACCELERATION = 20.0  // High acceleration to overcome friction
-    private static readonly DECELERATION = 10.0
-    private static readonly TURN_SPEED = 4.0
-    private static readonly MIN_TURN_SPEED = 0.5  // Allow turning at very low speeds reliable car physics system
- * Supports both AI and manual control with the same physics
- */
-
 export interface CarControls {
     throttle: number // -1 to 1 (negative = reverse)
     steering: number // -1 to 1 (negative = left, positive = right)
@@ -51,7 +40,7 @@ export class SimpleCarPhysics {
         }
 
         const forward = this.getForwardDirection(rotation)
-        const right = { x: forward.z, z: -forward.x } // Perpendicular to forward
+        const right = { x: forward.z, z: -forward.x }
 
         const currentSpeed = this.getForwardSpeed(velocity, forward)
         const sidewaysSpeed = velocity.x * right.x + velocity.z * right.z
@@ -112,7 +101,7 @@ export class SimpleCarPhysics {
 
         try {
             const currentVel = rigidBody.linvel()
-            const forceMagnitude = 25.0 // Force strength (aumentado para mayor respuesta)
+            const forceMagnitude = 25.0
 
             const forceX = (newVelocity.x - currentVel.x) * forceMagnitude
             const forceZ = (newVelocity.z - currentVel.z) * forceMagnitude

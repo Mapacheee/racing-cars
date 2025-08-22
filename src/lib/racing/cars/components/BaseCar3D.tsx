@@ -1,6 +1,13 @@
 import { useGLTF } from '@react-three/drei'
 import { RigidBody, interactionGroups } from '@react-three/rapier'
-import { useRef, forwardRef, useImperativeHandle, useCallback, useState, useEffect } from 'react'
+import {
+    useRef,
+    forwardRef,
+    useImperativeHandle,
+    useCallback,
+    useState,
+    useEffect,
+} from 'react'
 import type { ReactNode } from 'react'
 import type { BaseCar, CarPhysicsConfig } from '../types'
 import { DEFAULT_CAR_PHYSICS, COLLISION_GROUPS, CAR_MODELS } from '../config'
@@ -28,10 +35,17 @@ export interface Car3DRef {
     ) => void
 }
 
-// basic 3D car component with physics and customizable appearance
 const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
     (
-        { car, physics = {}, modelPath, visible = true, children, onCollision, onCollisionEnter },
+        {
+            car,
+            physics = {},
+            modelPath,
+            visible = true,
+            children,
+            onCollision,
+            onCollisionEnter,
+        },
         ref
     ) => {
         const rigidBodyRef = useRef<any>(null)
@@ -40,10 +54,10 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
 
         const { scene } = useGLTF(finalModelPath)
 
-        // Estado para controlar el tipo de cuerpo físico
-        const [bodyType, setBodyType] = useState<'dynamic' | 'kinematicPosition'>('dynamic')
+        const [bodyType, setBodyType] = useState<
+            'dynamic' | 'kinematicPosition'
+        >('dynamic')
 
-        // Cuando el auto respawnea, lo ponemos en kinematicPosition por 1 segundo
         useEffect(() => {
             setBodyType('kinematicPosition')
             const timeout = setTimeout(() => {
@@ -52,7 +66,6 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
             return () => clearTimeout(timeout)
         }, [car.position, car.rotation])
 
-        // Refuerza los grupos de colisión cada vez que el tipo de cuerpo cambie
         useEffect(() => {
             const body = rigidBodyRef.current
             if (
@@ -75,12 +88,10 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
             }
         }, [bodyType])
 
-        // callback ref that updates when rigidbody is ready
         const setRigidBodyRef = useCallback(
             (rigidBody: any) => {
                 rigidBodyRef.current = rigidBody
 
-                // force update of imperative handle when rigidbody changes
                 if (ref && typeof ref === 'object' && ref.current) {
                     ref.current.rigidBody = rigidBody
                 }
@@ -88,7 +99,6 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
             [ref]
         )
 
-        // expose car control methods through ref
         useImperativeHandle(
             ref,
             () => ({
@@ -152,17 +162,26 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
 
         if (!visible) return null
 
-        const isAICar = 'genome' in car;
+        const isAICar = 'genome' in car
         const carCollisionGroups = isAICar
-            ? interactionGroups(COLLISION_GROUPS.cars, [COLLISION_GROUPS.walls, COLLISION_GROUPS.track])
-            : interactionGroups(COLLISION_GROUPS.cars, [COLLISION_GROUPS.cars, COLLISION_GROUPS.walls, COLLISION_GROUPS.track]);
-        const carSolverGroups = carCollisionGroups;
-        const extraPhysicsProps: any = {};
+            ? interactionGroups(COLLISION_GROUPS.cars, [
+                  COLLISION_GROUPS.walls,
+                  COLLISION_GROUPS.track,
+              ])
+            : interactionGroups(COLLISION_GROUPS.cars, [
+                  COLLISION_GROUPS.cars,
+                  COLLISION_GROUPS.walls,
+                  COLLISION_GROUPS.track,
+              ])
+        const carSolverGroups = carCollisionGroups
+        const extraPhysicsProps: any = {}
         if (typeof finalPhysics.collisionFilterGroup === 'number') {
-            extraPhysicsProps.collisionFilterGroup = finalPhysics.collisionFilterGroup;
+            extraPhysicsProps.collisionFilterGroup =
+                finalPhysics.collisionFilterGroup
         }
         if (typeof finalPhysics.collisionFilterMask === 'number') {
-            extraPhysicsProps.collisionFilterMask = finalPhysics.collisionFilterMask;
+            extraPhysicsProps.collisionFilterMask =
+                finalPhysics.collisionFilterMask
         }
         return (
             <RigidBody
@@ -187,7 +206,9 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
                 userData={{ type: 'car', id: car.id }}
                 {...extraPhysicsProps}
                 {...(onCollision && { onCollisionEnter: onCollision })}
-                {...(typeof onCollisionEnter === 'function' && { onCollisionEnter })}
+                {...(typeof onCollisionEnter === 'function' && {
+                    onCollisionEnter,
+                })}
             >
                 <primitive
                     object={scene.clone()}

@@ -10,13 +10,11 @@ function PlayerRoomGuard() {
     const { currentRoom, isInitializing } = usePlayerRoomContext()
 
     useEffect(() => {
-        // Wait for initialization to complete before checking room
         if (!isInitializing && !currentRoom) {
             navigate('/training/menu', { replace: true })
         }
     }, [currentRoom, isInitializing, navigate])
 
-    // Show loading while initializing
     if (isInitializing) {
         return (
             <div className="min-h-screen w-screen flex items-center justify-center bg-background">
@@ -27,7 +25,6 @@ function PlayerRoomGuard() {
         )
     }
 
-    // Don't render room if no current room (after initialization)
     if (!currentRoom) {
         return null
     }
@@ -57,7 +54,7 @@ function PlayerRoomContent() {
             navigate('/training/menu')
         } catch (error) {
             console.error('Failed to leave room:', error)
-            // Force navigation even if leave fails
+
             navigate('/training/menu')
         }
     }

@@ -3,7 +3,7 @@ import type { SensorConfig } from '../types/sensors'
 
 export const ROAD_GEOMETRY: TrackGeometry = {
     width: 6,
-    height: 0.3, // Increased significantly to avoid overlap with cars
+    height: 0.3,
     length: 4,
 }
 
@@ -20,7 +20,7 @@ export const DEFAULT_SENSOR_CONFIG: SensorConfig = {
 
 export const TRACK_GENERATION = {
     segmentsPerSection: 40,
-    wallLength: 2.0, // Increased from 1.2 to 2.0 to reduce gaps
+    wallLength: 2.0,
     minimumWaypoints: 5,
 }
 

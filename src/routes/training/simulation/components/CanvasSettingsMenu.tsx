@@ -109,7 +109,6 @@ export default function CanvasSettingsMenu({
             console.log('🗑️ All AI generations have been reset successfully')
         } catch (error) {
             console.error('❌ Failed to reset AI generations:', error)
-            // You could add a toast notification here if you have one
         }
     }
 
@@ -202,7 +201,7 @@ export default function CanvasSettingsMenu({
                         <button
                             onClick={() => {
                                 if (isTraining) stopTraining()
-                                resetAllSavedGenerations()
+                                restartFromCurrentGeneration()
                             }}
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded text-xs transition-colors"
                             title="Reiniciar esta generación desde el principio"

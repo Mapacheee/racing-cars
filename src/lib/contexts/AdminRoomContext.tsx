@@ -208,7 +208,7 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
                         setCurrentRoom(response.room)
                         setParticipants(response.room.participants)
                         setIsCreatingRoom(false)
-                        // Save room to localStorage for persistence
+
                         localStorage.setItem(
                             'admin-current-room',
                             JSON.stringify(response.room)
@@ -366,7 +366,6 @@ export const AdminRoomProvider: React.FC<AdminRoomProviderProps> = () => {
         [auth.username, isConnected, currentRoom]
     )
 
-    // Utility methods
     const clearErrors = useCallback(() => {
         setConnectionError(null)
         setRoomError(null)

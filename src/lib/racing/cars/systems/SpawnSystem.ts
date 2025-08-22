@@ -1,7 +1,6 @@
 import type { Track } from '../../track'
 import type { BaseCar } from '../types'
 
-// spawn configuration for car generation
 export interface SpawnConfig {
     trackId: string
     carCount: number
@@ -10,7 +9,6 @@ export interface SpawnConfig {
     formation?: 'single' | 'grid' | 'random'
 }
 
-// calculate spawn position and orientation from track data
 export function calculateSpawnTransform(track: Track): {
     position: [number, number, number]
     rotation: number
@@ -24,20 +22,18 @@ export function calculateSpawnTransform(track: Track): {
         firstWaypoint.z,
     ]
 
-    const dx = secondWaypoint.x - firstWaypoint.x;
-    const dz = secondWaypoint.z - firstWaypoint.z;
-    const rotation = Math.atan2(dx, dz) + Math.PI / 10;
+    const dx = secondWaypoint.x - firstWaypoint.x
+    const dz = secondWaypoint.z - firstWaypoint.z
+    const rotation = Math.atan2(dx, dz) + Math.PI / 10
 
     return { position, rotation }
 }
 
-// generate basic car spawn data
 export function generateBaseCars(config: SpawnConfig, track: Track): BaseCar[] {
     const { position, rotation } = calculateSpawnTransform(track)
     const cars: BaseCar[] = []
 
     for (let i = 0; i < config.carCount; i++) {
-        // calculate spawn position with formation pattern
         const spawnPosition = calculateFormationPosition(
             position,
             i,
@@ -58,7 +54,6 @@ export function generateBaseCars(config: SpawnConfig, track: Track): BaseCar[] {
     return cars
 }
 
-// calculate spawn position based on formation pattern
 function calculateFormationPosition(
     basePosition: [number, number, number],
     index: number,
@@ -84,12 +79,10 @@ function calculateFormationPosition(
 
         case 'single':
         default:
-            // all cars spawn at same position (ghost mode for AI training)
             return basePosition
     }
 }
 
-// generate colors for cars if not provided
 export function generateCarColors(count: number): string[] {
     const baseColors = [
         '#ff0000',
@@ -112,7 +105,6 @@ export function generateCarColors(count: number): string[] {
     return colors
 }
 
-// validate spawn configuration
 export function validateSpawnConfig(config: SpawnConfig): boolean {
     return (
         config.carCount > 0 &&

@@ -15,7 +15,6 @@ interface TrackSceneProps {
     enableControls?: boolean
 }
 
-// main track scene component combining all track elements
 export default function TrackScene({
     track,
     settings,
@@ -79,7 +78,6 @@ export default function TrackScene({
         </>
     )
 
-    // wrap in physics world if enabled
     if (enablePhysics) {
         return (
             <Physics gravity={[0, -9.81, 0]} paused={false}>

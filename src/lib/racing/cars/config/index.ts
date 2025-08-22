@@ -4,7 +4,6 @@ import type {
     SensorConfig,
 } from '../types'
 
-// default car physics configuration for realistic car behavior
 export const DEFAULT_CAR_PHYSICS: CarPhysicsConfig = {
     angularDamping: 2.0,
     linearDamping: 0.08,
@@ -14,17 +13,14 @@ export const DEFAULT_CAR_PHYSICS: CarPhysicsConfig = {
     restitution: 0.1,
 }
 
-// collision groups for car physics interactions
 export const COLLISION_GROUPS: CarCollisionGroups = {
-    cars: 1, // group 1: cars
-    walls: 2, // group 2: walls and ground
-    track: 4, // group 4: track elements
+    cars: 1,
+    walls: 2,
+    track: 4,
 }
 
-// gravity configuration for car physics
 export const GRAVITY = [0, -9.81, 0] as const
 
-// default sensor configuration for obstacle detection
 export const DEFAULT_SENSOR_CONFIG: SensorConfig = {
     maxDistance: 4.5,
     angles: {
@@ -36,14 +32,12 @@ export const DEFAULT_SENSOR_CONFIG: SensorConfig = {
     },
 }
 
-// car model configuration
 export const CAR_MODELS = {
     default: '/assets/models/raceCarRed.glb',
     eliminated: '/assets/models/raceCarOrange.glb',
     player: '/assets/models/raceCarBlue.glb',
 } as const
 
-// car control limits and constants
 export const CAR_CONTROLS = {
     maxThrottle: 1.0,
     maxBrake: 1.0,

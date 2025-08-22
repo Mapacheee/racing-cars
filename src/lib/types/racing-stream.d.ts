@@ -62,7 +62,6 @@ export interface RaceEvent {
     timestamp: number
 }
 
-// WebSocket Events
 export interface CreateRoomData {
     adminUsername: string
     maxParticipants: number
@@ -97,7 +96,6 @@ export interface RemoveParticipantData {
     adminUsername: string
 }
 
-// WebSocket Response Types
 export interface RoomCreatedResponse {
     room: RaceRoom
     message: string

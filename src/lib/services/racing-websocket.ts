@@ -233,6 +233,5 @@ class RacingWebSocketService {
     }
 }
 
-// Export singleton instance
 export const racingWebSocketService = new RacingWebSocketService()
 export default racingWebSocketService

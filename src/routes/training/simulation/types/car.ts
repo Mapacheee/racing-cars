@@ -6,7 +6,7 @@ export interface AICar {
     rotation?: number
     color?: string
     trackId?: string
-    genome?: Genome  // Genoma NEAT para el carro
+    genome?: Genome
 }
 
 export interface CarPhysicsConfig {

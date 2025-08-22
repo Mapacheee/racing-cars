@@ -8,17 +8,16 @@ interface Track3DProps {
     enablePhysics?: boolean
 }
 
-// individual track piece component with optional physics collision
 function TrackPieceComponent({
     piece,
-    enablePhysics = true,
+    enablePhysics: _enablePhysics = true,
 }: {
     piece: TrackPiece
     enablePhysics?: boolean
 }): JSX.Element {
     const adjustedPosition: [number, number, number] = [
         piece.position[0],
-        ROAD_GEOMETRY.height - 1.12, 
+        ROAD_GEOMETRY.height - 1.12,
         piece.position[2],
     ]
     return (
@@ -35,7 +34,6 @@ function TrackPieceComponent({
     )
 }
 
-// main track 3d component - renders all track pieces with optional physics
 export default function Track3D({
     pieces,
     visible = true,

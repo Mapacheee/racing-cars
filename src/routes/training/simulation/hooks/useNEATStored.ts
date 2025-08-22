@@ -48,14 +48,13 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
     const saveGeneration = useCallback(
         async (
             generationNumber: number,
-            neatExportData: any, // Complete NEAT export object, not just population array
+            neatExportData: any,
             neatConfig: NEATConfig
         ): Promise<AIModelResponse | null> => {
             setLoading(true)
             try {
-                // Store the entire NEAT export data as a single generation
                 const createDto: CreateAiModelDto = {
-                    networkData: JSON.stringify(neatExportData), // Complete NEAT export object
+                    networkData: JSON.stringify(neatExportData),
                     neatConfig,
                     metadata: {
                         nodes: Array.isArray(neatExportData)
@@ -74,9 +73,9 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
                         species: Array.isArray(neatExportData)
                             ? neatExportData.length
                             : 1,
-                        isElite: false, // This represents the entire generation, not a single elite
+                        isElite: false,
                     },
-                } // console.log(this.baseUrl)
+                }
 
                 console.log('!!!! NEAT export data:', createDto)
 
@@ -136,7 +135,6 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
                     firstNetworkSample: result.networks?.[0],
                 })
 
-                // Check if networks array exists and has at least one generation record
                 if (
                     !result.networks ||
                     !Array.isArray(result.networks) ||
@@ -145,13 +143,11 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
                     console.log(
                         '🆕 No existing generations found in backend - this is expected for new users'
                     )
-                    return null // This is expected behavior, not an error
+                    return null
                 }
 
-                // Get the first (and should be only) generation record
                 const generationRecord = result.networks[0]
 
-                // The networkData should be the complete NEAT export object
                 const neatExportData = generationRecord.networkData
 
                 if (!neatExportData || typeof neatExportData !== 'object') {
@@ -196,7 +192,7 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
         async (
             generationNumber: number
         ): Promise<{
-            neatExportData: any // Complete NEAT export object for import
+            neatExportData: any
             generationNumber: number
             neatConfig: NEATConfig
         } | null> => {
@@ -207,7 +203,6 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
                     generationNumber
                 )
 
-                // Check if networks array exists and has at least one generation record
                 if (
                     !result.networks ||
                     !Array.isArray(result.networks) ||
@@ -216,13 +211,11 @@ export function useNEATStored(options: UseNEATStoredOptions = {}) {
                     console.log(
                         `🆕 No networks found for generation ${generationNumber} - this is expected for new generations`
                     )
-                    return null // This is expected behavior, not an error
+                    return null
                 }
 
-                // Get the first (and should be only) generation record
                 const generationRecord = result.networks[0]
 
-                // The networkData should be the complete NEAT export object
                 const neatExportData = generationRecord.networkData
 
                 if (!neatExportData || typeof neatExportData !== 'object') {

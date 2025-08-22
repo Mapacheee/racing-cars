@@ -1,4 +1,3 @@
-// shared track types for both training and admin modules
 export interface Waypoint {
     x: number
     z: number
@@ -24,7 +23,7 @@ export interface Track {
     pieces: TrackPiece[]
     walls: Wall[]
     length: number
-    // Optional spline data for distance tracking
+
     splineData?: {
         controlPoints: { x: number; y: number }[]
         centralPath: { x: number; y: number }[]
@@ -39,7 +38,6 @@ export interface TrackGeometry {
     length: number
 }
 
-// track editing and interaction types
 export interface TrackEditMode {
     enabled: boolean
     mode: 'add' | 'move' | 'remove' | 'swap'
@@ -52,12 +50,11 @@ export interface TrackViewSettings {
     showTrack: boolean
 }
 
-// Car distance tracking types
 export interface CarTrackingState {
     currentT: number
     distanceTraveled: number
     totalDistance: number
     isGoingReverse: boolean
     distanceFromTrack: number
-    progress: number // 0-1 around the track
+    progress: number
 }

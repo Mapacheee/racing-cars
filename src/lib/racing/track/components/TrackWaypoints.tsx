@@ -1,26 +1,7 @@
 import { Text, useGLTF } from '@react-three/drei'
 import type { Waypoint } from '../types/index'
 
-// Preload the overhead model
 useGLTF.preload('/assets/models/overhead.glb')
-
-// Component for the starting line overhead model
-function StartLineOverhead({
-    position,
-}: {
-    position: [number, number, number]
-}) {
-    const { scene } = useGLTF('/assets/models/overhead.glb')
-
-    return (
-        <primitive
-            object={scene.clone()}
-            position={position}
-            rotation={[0, 1, 0]}
-            scale={[5, 5, 5]}
-        />
-    )
-}
 
 interface TrackWaypointsProps {
     waypoints: Waypoint[]
@@ -31,7 +12,6 @@ interface TrackWaypointsProps {
     highlightColor?: string
 }
 
-// visual waypoint markers for track editing and navigation
 export default function TrackWaypoints({
     waypoints,
     visible = true,
@@ -50,7 +30,6 @@ export default function TrackWaypoints({
                 const isStartPoint = index === 0
                 const isHighlighted = highlightedIndex === index
 
-                // determine waypoint color based on state
                 const getWaypointColor = () => {
                     if (isStartPoint) return startPointColor
                     if (isHighlighted) return highlightColor
@@ -59,7 +38,6 @@ export default function TrackWaypoints({
 
                 return (
                     <group key={`waypoint-${index}`}>
-
                         {/* waypoint sphere marker */}
                         <mesh position={[waypoint.x, 0.3, waypoint.z]}>
                             <sphereGeometry args={[isStartPoint ? 0.4 : 0.3]} />

@@ -36,7 +36,7 @@ function SimulationContent({
                     ? 'Reseteando todas las generaciones y creando nueva...'
                     : 'Cargando datos de entrenamiento desde el servidor...'
             }
-            minimumDisplayTime={isResetting ? 2000 : 1500} // Longer display for reset
+            minimumDisplayTime={isResetting ? 2000 : 1500}
         >
             <>
                 <CanvasSettingsMenu setTrack={setTrack} />
@@ -51,7 +51,6 @@ function SimulatorProviders({
 }: {
     children: ReactNode
 }): JSX.Element {
-    // Estado para forzar re-render sin recargar la página
     const [resetKey, setResetKey] = useState(0)
 
     const handleReset = useCallback(() => {

@@ -17,7 +17,6 @@ export default function AdminRoom() {
     const navigate = useNavigate()
     const { clearAuth } = useAuth<AdminAuth>()
 
-    // Use the admin room context instead of the hook
     const {
         isConnected,
         connectionError,
@@ -69,7 +68,7 @@ export default function AdminRoom() {
     async function handleNewRoom() {
         try {
             clearErrors()
-            await createRoom(10) // Max 10 participants
+            await createRoom(99)
         } catch (error) {
             console.error('Failed to create room:', error)
         }

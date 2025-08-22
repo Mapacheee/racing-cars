@@ -12,7 +12,7 @@ export default function LoadingWrapper({
     isLoading,
     message,
     children,
-    minimumDisplayTime = 1500, // 1.5 seconds minimum display
+    minimumDisplayTime = 1500,
 }: LoadingWrapperProps): JSX.Element {
     const [showLoading, setShowLoading] = useState(isLoading)
     const [isVisible, setIsVisible] = useState(isLoading)
@@ -20,29 +20,25 @@ export default function LoadingWrapper({
 
     useEffect(() => {
         if (isLoading) {
-            // If loading starts, show immediately and record start time
             loadingStartTime.current = Date.now()
             setShowLoading(true)
             setIsVisible(true)
         } else if (loadingStartTime.current !== null) {
-            // If loading ends, check if minimum time has passed
             const elapsed = Date.now() - loadingStartTime.current
             const remainingTime = Math.max(0, minimumDisplayTime - elapsed)
 
             const hideLoading = () => {
                 setIsVisible(false)
-                // After fade animation, hide completely
+
                 setTimeout(() => {
                     setShowLoading(false)
                     loadingStartTime.current = null
-                }, 300) // 300ms fade duration
+                }, 300)
             }
 
             if (remainingTime > 0) {
-                // Wait for remaining time before hiding
                 setTimeout(hideLoading, remainingTime)
             } else {
-                // Hide immediately
                 hideLoading()
             }
         }

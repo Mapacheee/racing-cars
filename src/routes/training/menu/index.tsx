@@ -42,10 +42,8 @@ export default function TrainingMenu() {
             try {
                 clearErrors()
                 await joinRoom(roomNumber)
-                // Navigation will happen automatically via useEffect above
             } catch (error) {
                 console.error('Failed to join room:', error)
-                // Error is already set in the context
             }
         },
         validateOnChange: true,

@@ -31,10 +31,8 @@ class TrackUpdateEventSystem {
     }
 }
 
-// Global instance
 export const trackUpdateEvents = new TrackUpdateEventSystem()
 
-// React hook to listen for track updates
 import { useEffect, useState } from 'react'
 
 export function useTrackUpdates(): number {

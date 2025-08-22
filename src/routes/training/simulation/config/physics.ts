@@ -7,9 +7,9 @@ export const CAR_PHYSICS_CONFIG: CarPhysicsConfig = {
 }
 
 export const COLLISION_GROUPS: CarCollisionGroups = {
-    cars: 1, // Group 1: Cars
-    walls: 2, // Group 2: Walls and ground
-    track: 4, // Group 4: Track elements
+    cars: 1,
+    walls: 2,
+    track: 4,
 }
 
 // Rapier configuration with bit masks:
@@ -17,4 +17,4 @@ export const COLLISION_GROUPS: CarCollisionGroups = {
 // Ground/Walls: collisionGroups=0b0010 (I am bit 2), solverGroups=0b0001 (I collide with bit 1)
 // Result: Cars DON'T collide with each other, DO collide with ground/walls
 
-export const GRAVITY = [0, -9.81, 0] as const // Standard gravity for better car stability
+export const GRAVITY = [0, -9.81, 0] as const

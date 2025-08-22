@@ -16,33 +16,27 @@ import type {
 } from '../types/racing-stream'
 
 interface UseAdminRoomReturn {
-    // Connection state
     socket: Socket | null
     isConnected: boolean
     connectionError: string | null
 
-    // Room state
     currentRoom: RaceRoom | null
     racePackage: RacePackage | null
     participants: RoomParticipant[]
 
-    // Loading states
     isCreatingRoom: boolean
     isConfiguringRace: boolean
     isStartingRace: boolean
     isClosingRoom: boolean
 
-    // Error states
     roomError: string | null
 
-    // Room management methods
     createRoom: (maxParticipants: number) => Promise<void>
     configureRace: (config: RaceConfiguration) => Promise<void>
     startRace: () => Promise<void>
     closeRoom: () => Promise<void>
     removeParticipant: (userId: string) => Promise<void>
 
-    // Utility methods
     clearErrors: () => void
     disconnect: () => void
 }
@@ -50,29 +44,23 @@ interface UseAdminRoomReturn {
 export const useAdminRoom = (): UseAdminRoomReturn => {
     const { auth } = useAuth<AdminAuth>()
 
-    // Connection state
     const [socket, setSocket] = useState<Socket | null>(null)
     const [isConnected, setIsConnected] = useState(false)
     const [connectionError, setConnectionError] = useState<string | null>(null)
 
-    // Room state
     const [currentRoom, setCurrentRoom] = useState<RaceRoom | null>(null)
     const [racePackage, setRacePackage] = useState<RacePackage | null>(null)
     const [participants, setParticipants] = useState<RoomParticipant[]>([])
 
-    // Loading states
     const [isCreatingRoom, setIsCreatingRoom] = useState(false)
     const [isConfiguringRace, setIsConfiguringRace] = useState(false)
     const [isStartingRace, setIsStartingRace] = useState(false)
     const [isClosingRoom, setIsClosingRoom] = useState(false)
 
-    // Error states
     const [roomError, setRoomError] = useState<string | null>(null)
 
-    // Use refs to track if component is mounted to avoid state updates after unmount
     const isMountedRef = useRef(true)
 
-    // Initialize WebSocket connection
     useEffect(() => {
         if (!auth?.token) return
 
@@ -80,7 +68,6 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
             const socketInstance = racingWebSocketService.connect(auth.token)
             setSocket(socketInstance)
 
-            // Connection event handlers
             socketInstance.on('connect', () => {
                 if (isMountedRef.current) {
                     setIsConnected(true)
@@ -103,7 +90,6 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
                 }
             })
 
-            // Room event handlers
             setupRoomEventHandlers(socketInstance)
         } catch (error) {
             console.error('Failed to connect to racing server:', error)
@@ -118,9 +104,7 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
         }
     }, [auth?.token])
 
-    // Setup room event handlers
     const setupRoomEventHandlers = useCallback((_socketInstance: Socket) => {
-        // Player joined event
         racingWebSocketService.onPlayerJoined(data => {
             if (isMountedRef.current && data.room) {
                 setCurrentRoom(data.room)
@@ -131,7 +115,6 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
             }
         })
 
-        // Player left event
         racingWebSocketService.onPlayerLeft(data => {
             if (isMountedRef.current && data.room) {
                 setCurrentRoom(data.room)
@@ -140,7 +123,6 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
             }
         })
 
-        // Participant removed event
         racingWebSocketService.onParticipantRemoved(data => {
             if (isMountedRef.current) {
                 console.log(
@@ -149,7 +131,6 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
             }
         })
 
-        // Room closed event
         racingWebSocketService.onRoomClosed(data => {
             if (isMountedRef.current) {
                 setCurrentRoom(null)
@@ -160,7 +141,6 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
         })
     }, [])
 
-    // Room management methods
     const createRoom = useCallback(
         async (maxParticipants: number): Promise<void> => {
             if (!auth?.username || !socket) {
@@ -371,7 +351,6 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
         [auth?.username, socket, currentRoom]
     )
 
-    // Utility methods
     const clearErrors = useCallback(() => {
         setConnectionError(null)
         setRoomError(null)
@@ -386,7 +365,6 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
         setRacePackage(null)
     }, [])
 
-    // Cleanup on unmount
     useEffect(() => {
         return () => {
             isMountedRef.current = false
@@ -394,33 +372,27 @@ export const useAdminRoom = (): UseAdminRoomReturn => {
     }, [])
 
     return {
-        // Connection state
         socket,
         isConnected,
         connectionError,
 
-        // Room state
         currentRoom,
         racePackage,
         participants,
 
-        // Loading states
         isCreatingRoom,
         isConfiguringRace,
         isStartingRace,
         isClosingRoom,
 
-        // Error states
         roomError,
 
-        // Room management methods
         createRoom,
         configureRace,
         startRace,
         closeRoom,
         removeParticipant,
 
-        // Utility methods
         clearErrors,
         disconnect,
     }

@@ -13,7 +13,6 @@ export function usePlayerProfile() {
     const isPlayer = auth && 'aiGeneration' in auth
     const player = isPlayer ? auth : null
 
-    // Fetch fresh profile data from service
     useEffect(() => {
         async function fetchProfile() {
             if (!player?.token || !player?.username) {
@@ -31,15 +30,14 @@ export function usePlayerProfile() {
             } catch (err) {
                 console.warn('Failed to fetch fresh profile data:', err)
                 setError(err instanceof Error ? err.message : 'Unknown error')
-                // Fallback to auth context data if service fails
-                // Convert Player to PlayerProfile format
+
                 if (player) {
                     setProfile({
                         id: player.id,
                         username: player.username,
                         aiGeneration: player.aiGeneration,
-                        createdAt: '', // Not available from auth context
-                        updatedAt: '', // Not available from auth context
+                        createdAt: '',
+                        updatedAt: '',
                     })
                 }
             } finally {
@@ -58,7 +56,7 @@ export function usePlayerProfile() {
         isLoading: authLoading || isLoading,
         error,
         profile,
-        // Function to refresh profile data
+
         refreshProfile: async () => {
             if (player?.token && player?.username) {
                 setIsLoading(true)
