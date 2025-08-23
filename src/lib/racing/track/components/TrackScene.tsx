@@ -51,6 +51,7 @@ export default function TrackScene({
 
             <Track3D
                 pieces={track.pieces}
+                track={track}
                 visible={settings.showTrack}
                 enablePhysics={enablePhysics}
             />
