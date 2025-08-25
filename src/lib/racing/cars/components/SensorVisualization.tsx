@@ -34,7 +34,7 @@ export default function SensorVisualization({
         setShowSensors(false)
         const timer = setTimeout(() => setShowSensors(true), 1000)
         return () => clearTimeout(timer)
-    }, [carPosition.x, carPosition.y, carPosition.z])
+    }, [])
     const basePosition = new Vector3(-0.5, 0.2, -1)
 
     const sensorLines = useMemo(() => {
@@ -66,14 +66,9 @@ export default function SensorVisualization({
                 key: 'right',
             },
         ]
-        const sensorAngleOffset =
-            typeof visualConfig.sensorAngleOffset === 'number'
-                ? visualConfig.sensorAngleOffset
-                : Math.PI / 2
         return sensors.map(sensor => {
             const sensorAngleRad = (sensor.angle * Math.PI) / 180
-            const absoluteAngle =
-                carRotation + sensorAngleRad + sensorAngleOffset
+            const absoluteAngle = carRotation + sensorAngleRad + (49 * Math.PI) / 36   
             const start = basePosition.clone()
             const maxDistance = config.maxDistance
             const end = basePosition
