@@ -2,7 +2,7 @@ import { Suspense, useState, useEffect } from 'react'
 import type { Track } from '../../../../lib/racing/track/types'
 import type { JSX } from 'react'
 import AICar from '../entities/AICar'
-import { TrackScene } from '../../../../lib/racing/track'
+import { BaseScene } from '../../../../lib/components/shared'
 import { generateAICars } from '../systems/SpawnSystem'
 import { useCanvasSettings } from '../../../../lib/contexts/useCanvasSettings'
 import { useRaceReset } from '../../../../lib/contexts/RaceResetContext'
@@ -150,7 +150,7 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
     ])
 
     return (
-        <TrackScene
+        <BaseScene
             track={track}
             settings={{
                 showWaypoints,
@@ -179,6 +179,6 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
                         </Suspense>
                     )
                 })}
-        </TrackScene>
+        </BaseScene>
     )
 }

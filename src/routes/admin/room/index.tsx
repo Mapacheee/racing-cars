@@ -27,7 +27,6 @@ export default function AdminRoom() {
         isClosingRoom,
         roomError,
         createRoom,
-        startRace,
         closeRoom,
         removeParticipant,
         clearErrors,
@@ -59,9 +58,10 @@ export default function AdminRoom() {
         if (!currentRoom) return
 
         try {
-            await startRace()
+            // Navigate to racing competition instead of starting race directly
+            navigate('/admin/racing-competition')
         } catch (error) {
-            console.error('Failed to start race:', error)
+            console.error('Failed to navigate to racing competition:', error)
         }
     }
 

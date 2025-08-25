@@ -1,0 +1,5 @@
+export { default as SimulationCanvas } from './SimulationCanvas'
+export { default as BaseScene } from './BaseScene'
+export type { SimulationCanvasProps, CameraConfig } from './SimulationCanvas'
+export type { BaseSceneProps } from './BaseScene'
+export { CAMERA_CONFIG } from './SimulationCanvas'
