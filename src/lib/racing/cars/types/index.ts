@@ -6,31 +6,34 @@ export interface BaseCar {
     trackId?: string
 }
 
-export interface AICar extends BaseCar {
+export interface AiCar extends BaseCar {
     genome?: any
+    networkIndex?: number
+    network?: any
 }
 
+export type AICar = AiCar
+
 export interface CarPhysicsConfig {
+    mass: number
+    friction: number
+    restitution: number
+    density: number
     angularDamping: number
     linearDamping: number
     spawnHeight: number
-    mass?: number
-    friction?: number
-    restitution?: number
-    collisionFilterGroup?: number
-    collisionFilterMask?: number
 }
 
 export interface CarCollisionGroups {
-    cars: number
-    walls: number
-    track: number
+    car: number
+    wall: number
+    sensor: number
 }
 
 export interface CarControls {
-    throttle: number // 0-1 forward acceleration
-    brake: number // 0-1 braking force
-    steering: number // -1 to 1 steering angle
+    throttle: number  // 0-1 forward acceleration
+    brake: number     // 0-1 braking force  
+    steering: number  // -1 to 1 steering angle
 }
 
 export interface CarState {

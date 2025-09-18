@@ -74,15 +74,15 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
                 typeof body.setSolverGroups === 'function'
             ) {
                 body.setCollisionGroups(
-                    interactionGroups(COLLISION_GROUPS.cars, [
-                        COLLISION_GROUPS.walls,
-                        COLLISION_GROUPS.track,
+                    interactionGroups(COLLISION_GROUPS.car, [
+                        COLLISION_GROUPS.wall,
+                        COLLISION_GROUPS.sensor,
                     ])
                 )
                 body.setSolverGroups(
-                    interactionGroups(COLLISION_GROUPS.cars, [
-                        COLLISION_GROUPS.walls,
-                        COLLISION_GROUPS.track,
+                    interactionGroups(COLLISION_GROUPS.car, [
+                        COLLISION_GROUPS.wall,
+                        COLLISION_GROUPS.sensor,
                     ])
                 )
             }
@@ -164,25 +164,16 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
 
         const isAICar = 'genome' in car
         const carCollisionGroups = isAICar
-            ? interactionGroups(COLLISION_GROUPS.cars, [
-                  COLLISION_GROUPS.walls,
-                  COLLISION_GROUPS.track,
+            ? interactionGroups(COLLISION_GROUPS.car, [
+                  COLLISION_GROUPS.wall,
+                  COLLISION_GROUPS.sensor,
               ])
-            : interactionGroups(COLLISION_GROUPS.cars, [
-                  COLLISION_GROUPS.cars,
-                  COLLISION_GROUPS.walls,
-                  COLLISION_GROUPS.track,
+            : interactionGroups(COLLISION_GROUPS.car, [
+                  COLLISION_GROUPS.car,
+                  COLLISION_GROUPS.wall,
+                  COLLISION_GROUPS.sensor,
               ])
         const carSolverGroups = carCollisionGroups
-        const extraPhysicsProps: any = {}
-        if (typeof finalPhysics.collisionFilterGroup === 'number') {
-            extraPhysicsProps.collisionFilterGroup =
-                finalPhysics.collisionFilterGroup
-        }
-        if (typeof finalPhysics.collisionFilterMask === 'number') {
-            extraPhysicsProps.collisionFilterMask =
-                finalPhysics.collisionFilterMask
-        }
         return (
             <RigidBody
                 ref={setRigidBodyRef}
@@ -204,7 +195,6 @@ const BaseCar3D = forwardRef<Car3DRef, BaseCar3DProps>(
                 collisionGroups={carCollisionGroups}
                 solverGroups={carSolverGroups}
                 userData={{ type: 'car', id: car.id }}
-                {...extraPhysicsProps}
                 {...(onCollision && { onCollisionEnter: onCollision })}
                 {...(typeof onCollisionEnter === 'function' && {
                     onCollisionEnter,

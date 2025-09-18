@@ -6,7 +6,7 @@ import {
     SplinePath,
 } from './SplineTrackGenerator'
 
-export const DEFAULT_TRACK_SEED: number = 12345 as const
+export const DEFAULT_TRACK_SEED = 12345 as const
 
 export const ROAD_GEOMETRY = {
     width: 6,
@@ -18,13 +18,13 @@ export const TRACK_GENERATION = {
     segmentsPerSection: 20,
     wallLength: 4,
     minimumWaypoints: 8,
-    trackWidth: ROAD_GEOMETRY.width + 2, // Much smaller track width for closer walls
-    baseRadius: 40, // Reduced from 80 to 40 for shorter tracks
-    radiusVariation: 20, // Reduced from 50 to 30 for tighter curves
-    numControlPoints: 12, // Reduced from 12 to 8 for shorter tracks
+    trackWidth: ROAD_GEOMETRY.width + 2,
+    baseRadius: 40,
+    radiusVariation: 20,
+    numControlPoints: 12,
 } as const
 
-function generateMainTrack(): Track {
+const generateMainTrack = (): Track => {
     const controlPoints = generateProceduralControlPoints({
         numControlPoints: TRACK_GENERATION.numControlPoints,
         baseRadius: TRACK_GENERATION.baseRadius,
@@ -38,8 +38,8 @@ function generateMainTrack(): Track {
         controlPoints,
         TRACK_GENERATION.trackWidth,
         {
-            segmentsPerSpline: 8, // More segments for smoother curves
-            numCheckpoints: 2, // More checkpoints for better tracking
+            segmentsPerSpline: 8,
+            numCheckpoints: 2,
             roadPieceLength: ROAD_GEOMETRY.length,
         }
     )
@@ -52,30 +52,25 @@ function generateMainTrack(): Track {
     )
 }
 
-export function generateRandomTrack(
+// generate random track
+export const generateRandomTrack = (
     id: string,
     name: string,
     seed?: number
-): Track {
-    const options: Parameters<typeof generateProceduralControlPoints>[0] = {
-        numControlPoints: 6 + Math.floor(Math.random() * 4), // 6-9 control points (shorter)
-        baseRadius: 30 + Math.random() * 30, // 30-60 base radius (smaller)
-        radiusVariation: 20 + Math.random() * 25, // 20-45 variation (tighter curves)
+): Track => {
+    const controlPoints = generateProceduralControlPoints({
+        numControlPoints: 6 + Math.floor(Math.random() * 4),
+        baseRadius: 30 + Math.random() * 30,
+        radiusVariation: 20 + Math.random() * 25,
         centerX: 0,
         centerY: 0,
-    }
+        ...(seed && { seed }),
+    })
 
-    if (seed !== undefined) {
-        options.seed = seed
-    }
-
-    const controlPoints = generateProceduralControlPoints(options)
-
-    const trackWidth = 3 + Math.random() * 2 // 3-5 track width (smaller)
-
+    const trackWidth = 3 + Math.random() * 2
     const splineTrack = generateSplineRaceTrack(controlPoints, trackWidth, {
-        segmentsPerSpline: 25 + Math.floor(Math.random() * 15), // 25-40 segments
-        numCheckpoints: 20 + Math.floor(Math.random() * 10), // 20-30 checkpoints
+        segmentsPerSpline: 25 + Math.floor(Math.random() * 15),
+        numCheckpoints: 20 + Math.floor(Math.random() * 10),
         roadPieceLength: ROAD_GEOMETRY.length,
     })
 
@@ -85,13 +80,15 @@ export function generateRandomTrack(
     return track
 }
 
+// init tracks
 const MAIN_TRACK: Track = generateMainTrack()
 
 export const TRACKS: Record<string, Track> = {
     main_circuit: MAIN_TRACK,
 }
 
-export function regenerateMainTrack(seed?: number): Track {
+// Regenerate track with new seed
+export const regenerateMainTrack = (seed?: number): Track => {
     const controlPoints = generateProceduralControlPoints({
         numControlPoints: TRACK_GENERATION.numControlPoints,
         baseRadius: TRACK_GENERATION.baseRadius,
@@ -105,8 +102,8 @@ export function regenerateMainTrack(seed?: number): Track {
         controlPoints,
         TRACK_GENERATION.trackWidth,
         {
-            segmentsPerSpline: 40, // More segments for smoother curves
-            numCheckpoints: 30, // More checkpoints for better tracking
+            segmentsPerSpline: 40,
+            numCheckpoints: 30,
             roadPieceLength: ROAD_GEOMETRY.length,
         }
     )
@@ -123,10 +120,9 @@ export function regenerateMainTrack(seed?: number): Track {
 
     TRACKS['main_circuit'] = newTrack
 
+    // notify track update listeners
     try {
-        import(
-            '../../../../routes/training/simulation/utils/TrackUpdateEvent'
-        ).then(module => {
+        import('../../../../routes/training/simulation/utils/TrackUpdateEvent').then(module => {
             module.trackUpdateEvents.notify()
         })
     } catch (error) {
@@ -136,65 +132,61 @@ export function regenerateMainTrack(seed?: number): Track {
     return newTrack
 }
 
-export function createSplinePathFromTrack(track: Track): SplinePath | null {
+// create spline path from track
+export const createSplinePathFromTrack = (track: Track): SplinePath | null => {
     if (!track.splineData) {
         console.warn('Track does not have spline data for distance tracking')
         return null
     }
-
     return new SplinePath(track.splineData.centralPath)
 }
 
 export { SplinePath, CarTracker } from './SplineTrackGenerator'
 
-export function getDistanceBetweenPoints(
+// utility functions with functional approach
+export const getDistanceBetweenPoints = (
     p1: { x: number; z: number },
     p2: { x: number; z: number }
-): number {
+): number => {
     const dx = p2.x - p1.x
     const dz = p2.z - p1.z
     return Math.sqrt(dx * dx + dz * dz)
 }
 
-export function getDistanceToWaypoint(
+export const getDistanceToWaypoint = (
     carX: number,
     carZ: number,
     waypoint: Waypoint
-): number {
+): number => {
     const dx = waypoint.x - carX
     const dz = waypoint.z - carZ
     return Math.sqrt(dx * dx + dz * dz)
 }
 
-export function getDirectionToWaypoint(
+export const getDirectionToWaypoint = (
     carX: number,
     carZ: number,
     waypoint: Waypoint
-): { x: number; z: number } {
+): { x: number; z: number } => {
     const dx = waypoint.x - carX
     const dz = waypoint.z - carZ
     const distance = Math.sqrt(dx * dx + dz * dz)
 
-    if (distance === 0) return { x: 0, z: 0 }
-
-    return {
-        x: dx / distance,
-        z: dz / distance,
-    }
+    return distance === 0 
+        ? { x: 0, z: 0 }
+        : { x: dx / distance, z: dz / distance }
 }
 
-export function findNextWaypoint(
+export const findNextWaypoint = (
     carX: number,
     carZ: number,
     track: Track,
     currentWaypointIndex: number
-): number {
+): number => {
     const currentWaypoint = track.waypoints[currentWaypointIndex]
     const distance = getDistanceToWaypoint(carX, carZ, currentWaypoint)
 
-    if (distance < currentWaypoint.radius) {
-        return (currentWaypointIndex + 1) % track.waypoints.length
-    }
-
-    return currentWaypointIndex
+    return distance < currentWaypoint.radius
+        ? (currentWaypointIndex + 1) % track.waypoints.length
+        : currentWaypointIndex
 }

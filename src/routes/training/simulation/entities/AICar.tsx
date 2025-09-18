@@ -300,10 +300,10 @@ export default function AICar({
                 mass: 1.0,
                 friction: 1.5,
                 restitution: 0.1,
+                density: 1.0,
                 angularDamping: CAR_PHYSICS_CONFIG.angularDamping,
                 linearDamping: CAR_PHYSICS_CONFIG.linearDamping,
-                collisionFilterGroup: 0,
-                collisionFilterMask: 0,
+                spawnHeight: 0.8,
             }}
             onCollisionEnter={handleCollisionEnter}
         >
