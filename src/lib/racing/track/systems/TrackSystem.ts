@@ -127,7 +127,7 @@ export function regenerateMainTrack(seed?: number): Track {
         import(
             '../../../../routes/training/simulation/utils/TrackUpdateEvent'
         ).then(module => {
-            module.trackUpdateEvents.notifyTrackUpdate()
+            module.trackUpdateEvents.notify()
         })
     } catch (error) {
         console.warn('Could not notify track update listeners:', error)

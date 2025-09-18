@@ -47,18 +47,14 @@ export default function CanvasSettingsMenu({
         startTraining,
         stopTraining,
         restartGeneration,
-        restartFromCurrentGeneration,
         evolveToNextGeneration,
-        resetAllSavedGenerations,
-        isInitializing,
-        isResetting,
-        isSaving,
+        resetAllGenerations,
         isLoading,
     } = neatContext
 
     const track = TRACKS['main_circuit']
 
-    const isNeatBusy = isInitializing || isResetting || isSaving || isLoading
+    const isNeatBusy = isLoading
 
     const totalCars = getPopulationSize()
     const aliveCars =
@@ -78,7 +74,7 @@ export default function CanvasSettingsMenu({
         const newTrack = regenerateMainTrack(seed)
         setTrack(newTrack)
         import('../utils/TrackUpdateEvent').then(module => {
-            module.trackUpdateEvents.notifyTrackUpdate()
+            module.trackUpdateEvents.notify()
         })
         console.log(`🔄 Generated new track with seed: ${seed}`)
     }
@@ -94,7 +90,7 @@ export default function CanvasSettingsMenu({
 
     const handleStopAndRetrain = () => {
         stopTraining()
-        restartFromCurrentGeneration()
+        restartGeneration()
         setShowStopModal(false)
     }
 
@@ -110,7 +106,7 @@ export default function CanvasSettingsMenu({
 
     const handleResetAllConfirm = async () => {
         try {
-            await resetAllSavedGenerations()
+            await resetAllGenerations()
             setShowResetAllModal(false)
             console.log('🗑️ All AI generations have been reset successfully')
         } catch (error) {
@@ -189,15 +185,7 @@ export default function CanvasSettingsMenu({
                     >
                         Estado:{' '}
                         {isNeatBusy
-                            ? isInitializing
-                                ? 'Inicializando...'
-                                : isResetting
-                                  ? 'Reseteando...'
-                                  : isSaving
-                                    ? 'Guardando...'
-                                    : isLoading
-                                      ? 'Cargando...'
-                                      : 'Procesando...'
+                            ? 'Cargando...'
                             : isTraining
                               ? 'Entrenando'
                               : 'Detenido'}
@@ -236,7 +224,7 @@ export default function CanvasSettingsMenu({
                         <button
                             onClick={() => {
                                 if (isTraining) stopTraining()
-                                restartFromCurrentGeneration()
+                                restartGeneration()
                             }}
                             disabled={isNeatBusy}
                             className={`flex-1 text-white py-1 px-2 rounded text-xs transition-colors ${

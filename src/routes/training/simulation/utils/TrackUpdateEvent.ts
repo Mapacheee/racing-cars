@@ -1,48 +1,38 @@
-type TrackUpdateListener = () => void
+import { useEffect, useState } from 'react'
 
-class TrackUpdateEventSystem {
-    private listeners: Set<TrackUpdateListener> = new Set()
+// Track update event system
+class TrackUpdateEvents {
+    private listeners = new Set<() => void>()
 
-    addListener(listener: TrackUpdateListener): void {
+    addListener(listener: () => void) {
         this.listeners.add(listener)
     }
 
-    removeListener(listener: TrackUpdateListener): void {
+    removeListener(listener: () => void) {
         this.listeners.delete(listener)
     }
 
-    notifyTrackUpdate(): void {
+    notify() {
         this.listeners.forEach(listener => {
             try {
                 listener()
             } catch (error) {
-                console.error('Error in track update listener:', error)
+                console.error('Track update listener error:', error)
             }
         })
     }
-
-    getListenerCount(): number {
-        return this.listeners.size
-    }
 }
 
-export const trackUpdateEvents = new TrackUpdateEventSystem()
+export const trackUpdateEvents = new TrackUpdateEvents()
 
-import { useEffect, useState } from 'react'
-
-export function useTrackUpdates(): number {
+// Hook for track update notifications
+export const useTrackUpdates = () => {
     const [updateKey, setUpdateKey] = useState(0)
 
     useEffect(() => {
-        const listener = () => {
-            setUpdateKey(prev => prev + 1)
-        }
-
+        const listener = () => setUpdateKey((prev: number) => prev + 1)
         trackUpdateEvents.addListener(listener)
-
-        return () => {
-            trackUpdateEvents.removeListener(listener)
-        }
+        return () => trackUpdateEvents.removeListener(listener)
     }, [])
 
     return updateKey
