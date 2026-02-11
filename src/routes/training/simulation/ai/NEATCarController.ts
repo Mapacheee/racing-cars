@@ -1,89 +1,39 @@
 import { Network } from 'neataptic'
-import type { Genome } from '../types/neat'
+import type { Genome, NetworkOutput } from '../types/neat'
+import type { SensorReading } from '../types/sensors'
 
-type ControlActions = {
-    acceleration: number
-    steerRight: number
-    steerLeft: number
-}
-
-import { SimpleCarPhysics } from './utils/SimpleCarPhysics'
-
-export class NEATCarController {
+// Neural network car controller
+export class NeatCarController {
     private network: any
     private genome: Genome
-    private startTime: number
-    private isControlActive: boolean
-    private carId: string
 
-    constructor(genome: Genome, carId?: string) {
+    constructor(genome: Genome) {
         this.genome = genome
         this.network = new Network(genome)
-        this.startTime = Date.now()
-        this.isControlActive = false
-        this.carId = carId || ''
     }
 
-    getControlActions(sensorReadings: any, speed: number): ControlActions {
-        const maxSpeed = SimpleCarPhysics.getMaxSpeed()
-        const speedNormalized = Math.max(0, Math.min(1, speed / maxSpeed))
-
-        const inputs: number[] = [
-            sensorReadings.left,
-            sensorReadings.leftCenter,
-            sensorReadings.center,
-            sensorReadings.rightCenter,
-            sensorReadings.right,
-            speedNormalized,
+    // Get control actions from sensor inputs
+    getControlActions(sensors: SensorReading, speed: number): NetworkOutput {
+        const normalizedSpeed = Math.max(0, Math.min(1, speed / 25))
+        
+        const inputs = [
+            sensors.left,
+            sensors.leftCenter,
+            sensors.center,
+            sensors.rightCenter,
+            sensors.right,
+            normalizedSpeed,
         ]
 
         const outputs = this.network.activate(inputs) as number[]
-        const acceleration = Math.max(0, Math.min(1, outputs[0]))
-        const steerRight = Math.max(0, Math.min(1, outputs[1]))
-        const steerLeft = Math.max(0, Math.min(1, outputs[2]))
-
+        
         return {
-            acceleration,
-            steerRight,
-            steerLeft,
+            throttle: Math.max(-1, Math.min(1, outputs[0] * 2 - 1)), // -1 to 1
+            steering: Math.max(-1, Math.min(1, outputs[1] - outputs[2])), // -1 to 1
         }
-    }
-
-    applyActions(actions: ControlActions, rigidBody: any): void {
-        if (!rigidBody) return
-        let steering = 0
-        if (
-            typeof (actions as any).steerRight === 'number' &&
-            typeof (actions as any).steerLeft === 'number'
-        ) {
-            steering = (actions as any).steerRight - (actions as any).steerLeft
-        } else if (typeof (actions as any).steering === 'number') {
-            steering = (actions as any).steering
-        }
-        const controls = {
-            throttle: actions.acceleration,
-            steering,
-        }
-        SimpleCarPhysics.updateCarPhysics(rigidBody, controls)
     }
 
     getGenome(): Genome {
         return this.genome
-    }
-
-    getNetworkStats() {
-        return {
-            nodes: this.network.getNodeCount(),
-            connections: this.network.getActiveConnectionCount(),
-        }
-    }
-
-    isAIControlActive(): boolean {
-        return this.isControlActive
-    }
-
-    getControlDelay(): number {
-        const elapsedTime = Date.now() - this.startTime
-        return Math.max(0, 100 - elapsedTime)
     }
 }

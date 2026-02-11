@@ -1,15 +1,18 @@
 import type { CarPhysicsConfig, CarCollisionGroups } from '../types/car'
 
 export const CAR_PHYSICS_CONFIG: CarPhysicsConfig = {
+    mass: 1.2,
+    friction: 0.8,
+    restitution: 0.3,
+    density: 1.0,
     angularDamping: 0.8,
     linearDamping: 0.05,
-    spawnHeight: 0.6,
 }
 
 export const COLLISION_GROUPS: CarCollisionGroups = {
-    cars: 1,
-    walls: 2,
-    track: 4,
+    car: 1,
+    wall: 2,
+    sensor: 4,
 }
 
 // Rapier configuration with bit masks:

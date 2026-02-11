@@ -20,8 +20,8 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
     const {
         generation,
         carStates,
-        handleFitnessUpdate,
-        handleCarElimination,
+        updateCarFitness,
+        eliminateCar,
         neatRef,
         isLoading,
     } = neatContext || {}
@@ -162,8 +162,8 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
         >
             {isNeatReady &&
                 carStates &&
-                handleFitnessUpdate &&
-                handleCarElimination &&
+                updateCarFitness &&
+                eliminateCar &&
                 aiCars.map(carData => {
                     const carState = carStates.get(carData.id)
                     const isCarEliminated = carState?.isEliminated || false
@@ -172,8 +172,8 @@ export default function CarScene({ track }: { track: Track }): JSX.Element {
                         <Suspense key={carData.id} fallback={null}>
                             <AICar
                                 carData={carData}
-                                onFitnessUpdate={handleFitnessUpdate}
-                                onCarElimination={handleCarElimination}
+                                onFitnessUpdate={updateCarFitness}
+                                onCarElimination={eliminateCar}
                                 isEliminated={isCarEliminated}
                             />
                         </Suspense>

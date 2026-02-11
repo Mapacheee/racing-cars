@@ -1,143 +1,98 @@
-export interface CarControls {
-    throttle: number // -1 to 1 (negative = reverse)
-    steering: number // -1 to 1 (negative = left, positive = right)
-}
+import { Vector3 } from 'three'
 
+// Simple physics calculations for AI cars
 export class SimpleCarPhysics {
-    private static readonly MAX_SPEED = 6
-    private static readonly ACCELERATION = 1
-    private static readonly DECELERATION = 1
-    private static readonly TURN_SPEED = 2
-    private static readonly MIN_TURN_SPEED = 1
+    private velocity: Vector3 = new Vector3()
+    private acceleration: Vector3 = new Vector3()
+    private angularVelocity: number = 0
+    private maxSpeed: number = 50
+    private accelerationForce: number = 30
+    private friction: number = 0.95
+    private position: Vector3
+    private rotation: number
 
+    constructor(position: Vector3 = new Vector3(), rotation: number = 0) {
+        this.position = position
+        this.rotation = rotation
+    }
+
+    // Apply AI control inputs
+    applyControls(throttle: number, steering: number, brake: number = 0) {
+        // Forward/backward acceleration
+        const forwardForce = (throttle - brake) * this.accelerationForce
+        const forwardDirection = new Vector3(
+            Math.sin(this.rotation),
+            0,
+            Math.cos(this.rotation)
+        )
+        
+        this.acceleration.copy(forwardDirection.multiplyScalar(forwardForce))
+        
+        // Steering (angular velocity)
+        this.angularVelocity = steering * 2.0 * (this.velocity.length() / this.maxSpeed)
+    }
+
+    // Update physics step
+    update(deltaTime: number) {
+        this.velocity.add(this.acceleration.clone().multiplyScalar(deltaTime))
+        this.velocity.multiplyScalar(this.friction)
+        
+        if (this.velocity.length() > this.maxSpeed) {
+            this.velocity.normalize().multiplyScalar(this.maxSpeed)
+        }
+
+        this.position.add(this.velocity.clone().multiplyScalar(deltaTime))
+        this.rotation += this.angularVelocity * deltaTime
+        this.acceleration.set(0, 0, 0)
+    }
+
+    getPosition(): Vector3 {
+        return this.position.clone()
+    }
+
+    getRotation(): number {
+        return this.rotation
+    }
+
+    getVelocity(): Vector3 {
+        return this.velocity.clone()
+    }
+
+    getSpeed(): number {
+        return this.velocity.length()
+    }
+
+    setPosition(position: Vector3) {
+        this.position.copy(position)
+    }
+
+    setRotation(rotation: number) {
+        this.rotation = rotation
+    }
+
+    reset(position: Vector3, rotation: number = 0) {
+        this.position.copy(position)
+        this.rotation = rotation
+        this.velocity.set(0, 0, 0)
+        this.acceleration.set(0, 0, 0)
+        this.angularVelocity = 0
+    }
+
+    // Static utility methods for compatibility
     static getMaxSpeed(): number {
-        return SimpleCarPhysics.MAX_SPEED
+        return 50
     }
 
-    static updateCarPhysics(
-        rigidBody: any,
-        controls: CarControls,
-        deltaTime: number = 1 / 60
-    ): void {
-        if (!rigidBody) {
-            console.warn('SimpleCarPhysics: No rigid body provided')
-            return
+    static updateCarPhysics(rigidBody: any, controls: { throttle: number; steering: number }) {
+        // Basic physics update for rigid body
+        if (rigidBody && controls) {
+            // Apply forces based on controls
+            const force = [controls.throttle * 10, 0, 0]
+            rigidBody.applyImpulse(force, true)
+            
+            // Apply torque for steering
+            const torque = [0, controls.steering * 5, 0]
+            rigidBody.applyTorqueImpulse(torque, true)
         }
-
-        const position = rigidBody.translation()
-        const rotation = rigidBody.rotation()
-        const velocity = rigidBody.linvel()
-
-        if (position.y < -5) {
-            console.log('🚨 Car fell through ground! Resetting...')
-            rigidBody.setTranslation(
-                { x: position.x, y: 1.0, z: position.z },
-                true
-            )
-            rigidBody.setLinvel({ x: 0, y: 0, z: 0 }, true)
-            rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true)
-            return
-        }
-
-        const forward = this.getForwardDirection(rotation)
-        const right = { x: forward.z, z: -forward.x }
-
-        const currentSpeed = this.getForwardSpeed(velocity, forward)
-        const sidewaysSpeed = velocity.x * right.x + velocity.z * right.z
-
-        let targetSpeed = currentSpeed
-        const { throttle, steering } = controls
-
-        if (Math.abs(throttle) > 0.1) {
-            if (throttle > 0) {
-                targetSpeed = Math.min(
-                    currentSpeed + this.ACCELERATION * throttle * deltaTime,
-                    this.MAX_SPEED
-                )
-            } else {
-                if (currentSpeed > 0) {
-                    targetSpeed = Math.max(
-                        currentSpeed + this.DECELERATION * throttle * deltaTime,
-                        0
-                    )
-                } else {
-                    targetSpeed = Math.max(
-                        currentSpeed + this.ACCELERATION * throttle * deltaTime,
-                        -this.MAX_SPEED * 0.6
-                    )
-                }
-            }
-        } else {
-            const deceleration =
-                currentSpeed > 0
-                    ? -this.DECELERATION * 0.3
-                    : this.DECELERATION * 0.3
-            targetSpeed = currentSpeed + deceleration * deltaTime
-
-            if (Math.abs(targetSpeed) < 0.5) {
-                targetSpeed = 0
-            }
-        }
-
-        let angularVelocity = 0
-
-        if (
-            Math.abs(steering) > 0.1 &&
-            Math.abs(currentSpeed) > this.MIN_TURN_SPEED
-        ) {
-            const speedFactor = Math.min(Math.abs(currentSpeed) / 10.0, 1.0)
-            angularVelocity = steering * this.TURN_SPEED * speedFactor
-
-            if (currentSpeed < 0) {
-                angularVelocity *= -1
-            }
-        }
-
-        const newVelocity = {
-            x: forward.x * targetSpeed + right.x * sidewaysSpeed * 0.1,
-            y: velocity.y,
-            z: forward.z * targetSpeed + right.z * sidewaysSpeed * 0.1,
-        }
-
-        try {
-            const currentVel = rigidBody.linvel()
-            const forceMagnitude = 25.0
-
-            const forceX = (newVelocity.x - currentVel.x) * forceMagnitude
-            const forceZ = (newVelocity.z - currentVel.z) * forceMagnitude
-
-            // Apply force at car's center of mass
-            rigidBody.addForce({ x: forceX, y: 0, z: forceZ }, true)
-
-            // Still set angular velocity directly for responsive steering
-            rigidBody.setAngvel({ x: 0, y: angularVelocity, z: 0 }, true)
-        } catch (error) {
-            console.error('🚨 Error applying physics to rigid body:', error)
-        }
-    }
-
-    private static getForwardDirection(rotation: any): {
-        x: number
-        z: number
-    } {
-        const { x, y, z, w } = rotation
-
-        const yAngle = Math.atan2(2 * (w * y + x * z), 1 - 2 * (y * y + z * z))
-
-        return {
-            x: Math.sin(yAngle),
-            z: Math.cos(yAngle),
-        }
-    }
-
-    private static getForwardSpeed(
-        velocity: any,
-        forward: { x: number; z: number }
-    ): number {
-        return velocity.x * forward.x + velocity.z * forward.z
-    }
-
-    static getSpeedMagnitude(velocity: any): number {
-        return Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z)
     }
 }

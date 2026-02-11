@@ -1,22 +1,34 @@
 import type { Genome } from './neat'
 
-export interface AICar {
+// AI-controlled car with genome
+export interface AiCar {
     id: string
     position: [number, number, number]
     rotation?: number
-    color?: string
-    trackId?: string
     genome?: Genome
 }
+export type AICar = AiCar
 
-export interface CarPhysicsConfig {
+// Car physics configuration
+export interface CarPhysics {
     angularDamping: number
     linearDamping: number
-    spawnHeight: number
+    mass: number
 }
 
+// car physics configsfor collision detection
+export interface CarPhysicsConfig {
+    mass: number
+    friction: number
+    restitution: number
+    density: number
+    angularDamping: number
+    linearDamping: number
+}
+
+// Collision groups for physics
 export interface CarCollisionGroups {
-    cars: number
-    walls: number
-    track: number
+    car: number
+    wall: number
+    sensor: number
 }

@@ -66,13 +66,13 @@ export default function AICar({
 
     const [fitnessTracker, setFitnessTracker] = useState(() => {
         const startPos = new Vector3(...carData.position)
-        return new CarFitnessTracker(carData.id, startPos, track.waypoints)
+        return new CarFitnessTracker(carData.id, [startPos.x, startPos.y, startPos.z], track.waypoints)
     })
 
     useEffect(() => {
         const startPos = new Vector3(...carData.position)
         setFitnessTracker(
-            new CarFitnessTracker(carData.id, startPos, track.waypoints)
+            new CarFitnessTracker(carData.id, [startPos.x, startPos.y, startPos.z], track.waypoints)
         )
     }, [track.waypoints])
 
@@ -86,7 +86,7 @@ export default function AICar({
                 carData.rotation || 0,
                 0,
             ])
-            fitnessTracker.reset(startPos)
+            fitnessTracker.reset([startPos.x, startPos.y, startPos.z])
         }
     }, [carData.position, carData.rotation, track, fitnessTracker])
 
@@ -224,7 +224,7 @@ export default function AICar({
                         velocity.y,
                         velocity.z
                     )
-                    fitnessTracker.update(currentPosition, currentVelocity)
+                    fitnessTracker.update([currentPosition.x, currentPosition.y, currentPosition.z], currentVelocity)
 
                     if (velocity.z < -0.05) {
                         fitnessTracker.recordSteering(-Math.abs(velocity.z))
@@ -300,10 +300,10 @@ export default function AICar({
                 mass: 1.0,
                 friction: 1.5,
                 restitution: 0.1,
+                density: 1.0,
                 angularDamping: CAR_PHYSICS_CONFIG.angularDamping,
                 linearDamping: CAR_PHYSICS_CONFIG.linearDamping,
-                collisionFilterGroup: 0,
-                collisionFilterMask: 0,
+                spawnHeight: 0.8,
             }}
             onCollisionEnter={handleCollisionEnter}
         >

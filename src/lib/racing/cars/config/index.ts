@@ -5,22 +5,22 @@ import type {
 } from '../types'
 
 export const DEFAULT_CAR_PHYSICS: CarPhysicsConfig = {
-    angularDamping: 2.0,
-    linearDamping: 0.08,
-    spawnHeight: 0.8,
     mass: 0.8,
     friction: 0.3,
     restitution: 0.1,
+    density: 1.0,
+    angularDamping: 2.0,
+    linearDamping: 0.08,
+    spawnHeight: 0.8,
 }
 
 export const COLLISION_GROUPS: CarCollisionGroups = {
-    cars: 1,
-    walls: 2,
-    track: 4,
+    car: 1,
+    wall: 2,
+    sensor: 4,
 }
 
 export const GRAVITY = [0, -9.81, 0] as const
-
 export const DEFAULT_SENSOR_CONFIG: SensorConfig = {
     maxDistance: 4.5,
     angles: {
@@ -31,13 +31,11 @@ export const DEFAULT_SENSOR_CONFIG: SensorConfig = {
         right: 45,
     },
 }
-
 export const CAR_MODELS = {
     default: '/assets/models/raceCarRed.glb',
     eliminated: '/assets/models/raceCarOrange.glb',
     player: '/assets/models/raceCarBlue.glb',
 } as const
-
 export const CAR_CONTROLS = {
     maxThrottle: 1.0,
     maxBrake: 1.0,

@@ -1,3 +1,4 @@
+// Distance sensor readings (normalized 0-1)
 export interface SensorReading {
     left: number
     leftCenter: number
@@ -6,27 +7,14 @@ export interface SensorReading {
     right: number
 }
 
-export interface SensorAngles {
-    left: number
-    leftCenter: number
-    center: number
-    rightCenter: number
-    right: number
-}
-
+// Sensor configuration
 export interface SensorConfig {
     maxDistance: number
-    angles: SensorAngles
-}
-
-export interface SensorVisualizationConfig {
-    centerOffset: {
-        x: number
-        y: number
-        z: number
-    }
-    colors: {
-        noObstacle: string
-        obstacle: string
+    angles: {
+        left: number
+        leftCenter: number
+        center: number
+        rightCenter: number
+        right: number
     }
 }

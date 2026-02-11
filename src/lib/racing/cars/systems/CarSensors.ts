@@ -2,146 +2,108 @@ import { Vector3 } from 'three'
 import type { Wall } from '../../track'
 import type { SensorReading, SensorConfig } from '../types'
 
-export function createSensorReadings(
-    carPosition: Vector3,
-    carRotation: number,
-    walls: Wall[],
-    config: SensorConfig
-): SensorReading {
+// calculate sensor base position from car position and rotation
+const calculateSensorPosition = (carPosition: Vector3, carRotation: number): Vector3 => {
     const offset = { x: 0, y: 0, z: 0 }
-    const basePosition = new Vector3(
-        carPosition.x +
-            Math.sin(carRotation) * offset.z +
-            Math.cos(carRotation) * offset.x,
+    return new Vector3(
+        carPosition.x + Math.sin(carRotation) * offset.z + Math.cos(carRotation) * offset.x,
         carPosition.y + offset.y,
-        carPosition.z +
-            Math.cos(carRotation) * offset.z -
-            Math.sin(carRotation) * offset.x
+        carPosition.z + Math.cos(carRotation) * offset.z - Math.sin(carRotation) * offset.x
     )
-    const readings: SensorReading = {
-        left: getSensorDistance(
-            basePosition,
-            carRotation,
-            config.angles.left,
-            walls,
-            config.maxDistance
-        ),
-        leftCenter: getSensorDistance(
-            basePosition,
-            carRotation,
-            config.angles.leftCenter,
-            walls,
-            config.maxDistance
-        ),
-        center: getSensorDistance(
-            basePosition,
-            carRotation,
-            config.angles.center,
-            walls,
-            config.maxDistance
-        ),
-        rightCenter: getSensorDistance(
-            basePosition,
-            carRotation,
-            config.angles.rightCenter,
-            walls,
-            config.maxDistance
-        ),
-        right: getSensorDistance(
-            basePosition,
-            carRotation,
-            config.angles.right,
-            walls,
-            config.maxDistance
-        ),
-    }
-    return readings
 }
 
-function getSensorDistance(
-    carPosition: Vector3,
+// get distance reading for a single sensor direction
+const getSensorDistance = (
+    basePosition: Vector3,
     carRotation: number,
     sensorAngle: number,
     walls: Wall[],
     maxDistance: number
-): number {
+): number => {
     const sensorAngleRad = (sensorAngle * Math.PI) / 180
     const absoluteAngle = carRotation + sensorAngleRad
     const sensorEnd = new Vector3(
-        carPosition.x + Math.sin(absoluteAngle) * maxDistance,
-        carPosition.y,
-        carPosition.z + Math.cos(absoluteAngle) * maxDistance
+        basePosition.x + Math.sin(absoluteAngle) * maxDistance,
+        basePosition.y,
+        basePosition.z + Math.cos(absoluteAngle) * maxDistance
     )
 
-    let minDistance = 1.0
+    const distances = walls
+        .map(wall => calculateWallIntersection(basePosition, sensorEnd, wall))
+        .filter(distance => distance !== null)
+        .map(distance => Math.min(distance! / maxDistance, 1.0))
 
-    for (const wall of walls) {
-        const intersection = getLineIntersection(
-            carPosition.x,
-            carPosition.z,
-            sensorEnd.x,
-            sensorEnd.z,
-            wall.start.x,
-            wall.start.z,
-            wall.end.x,
-            wall.end.z
-        )
-
-        if (intersection) {
-            const distance = Math.sqrt(
-                Math.pow(intersection.x - carPosition.x, 2) +
-                    Math.pow(intersection.z - carPosition.z, 2)
-            )
-            const normalizedDistance = Math.min(distance / maxDistance, 1.0)
-            minDistance = Math.min(minDistance, normalizedDistance)
-        }
-    }
-
-    return minDistance
+    return distances.length > 0 ? Math.min(...distances) : 1.0
 }
 
-function getLineIntersection(
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    x3: number,
-    y3: number,
-    x4: number,
-    y4: number
-): { x: number; z: number } | null {
-    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-    if (Math.abs(denom) < 1e-10) return null
+// Calculate intersection distance with a wall
+const calculateWallIntersection = (
+    sensorStart: Vector3,
+    sensorEnd: Vector3,
+    wall: Wall
+): number | null => {
+    const intersection = getLineIntersection(
+        sensorStart.x,
+        sensorStart.z,
+        sensorEnd.x,
+        sensorEnd.z,
+        wall.start.x,
+        wall.start.z,
+        wall.end.x,
+        wall.end.z
+    )
 
-    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
-    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+    if (!intersection) return null
 
-    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-        return {
-            x: x1 + t * (x2 - x1),
-            z: y1 + t * (y2 - y1),
-        }
-    }
-
-    return null
+    return Math.sqrt(
+        Math.pow(intersection.x - sensorStart.x, 2) +
+        Math.pow(intersection.z - sensorStart.z, 2)
+    )
 }
 
-export function sensorReadingsToArray(readings: SensorReading): number[] {
-    return [
-        readings.left,
-        readings.leftCenter,
-        readings.center,
-        readings.rightCenter,
-        readings.right,
-    ]
+const getLineIntersection = (
+    x1: number, y1: number, x2: number, y2: number,
+    x3: number, y3: number, x4: number, y4: number
+): { x: number; z: number } | null => {
+    const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if (Math.abs(denominator) < 1e-10) return null
+
+    const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator
+    const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator
+
+    return (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+        ? { x: x1 + t * (x2 - x1), z: y1 + t * (y2 - y1) }
+        : null
 }
 
-export function createDefaultSensorReadings(): SensorReading {
+// main function to create sensor readings
+export const createSensorReadings = (
+    carPosition: Vector3,
+    carRotation: number,
+    walls: Wall[],
+    config: SensorConfig
+): SensorReading => {
+    const basePosition = calculateSensorPosition(carPosition, carRotation)
+    const { angles, maxDistance } = config
+
     return {
-        left: 1.0,
-        leftCenter: 1.0,
-        center: 1.0,
-        rightCenter: 1.0,
-        right: 1.0,
+        left: getSensorDistance(basePosition, carRotation, angles.left, walls, maxDistance),
+        leftCenter: getSensorDistance(basePosition, carRotation, angles.leftCenter, walls, maxDistance),
+        center: getSensorDistance(basePosition, carRotation, angles.center, walls, maxDistance),
+        rightCenter: getSensorDistance(basePosition, carRotation, angles.rightCenter, walls, maxDistance),
+        right: getSensorDistance(basePosition, carRotation, angles.right, walls, maxDistance),
     }
 }
+
+// convert sensor readings to array
+export const sensorReadingsToArray = (readings: SensorReading): number[] =>
+    [readings.left, readings.leftCenter, readings.center, readings.rightCenter, readings.right]
+
+// create default sensor readings
+export const createDefaultSensorReadings = (): SensorReading => ({
+    left: 1.0,
+    leftCenter: 1.0,
+    center: 1.0,
+    rightCenter: 1.0,
+    right: 1.0,
+})

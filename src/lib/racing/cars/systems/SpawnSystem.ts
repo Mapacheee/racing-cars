@@ -9,13 +9,12 @@ export interface SpawnConfig {
     formation?: 'single' | 'grid' | 'random'
 }
 
-export function calculateSpawnTransform(track: Track): {
+export const calculateSpawnTransform = (track: Track): {
     position: [number, number, number]
     rotation: number
-} {
-    const firstWaypoint = track.waypoints[0]
-    const secondWaypoint = track.waypoints[1]
-
+} => {
+    const [firstWaypoint, secondWaypoint] = track.waypoints.slice(0, 2)
+    
     const position: [number, number, number] = [
         firstWaypoint.x,
         -0.5,
@@ -29,86 +28,67 @@ export function calculateSpawnTransform(track: Track): {
     return { position, rotation }
 }
 
-export function generateBaseCars(config: SpawnConfig, track: Track): BaseCar[] {
-    const { position, rotation } = calculateSpawnTransform(track)
-    const cars: BaseCar[] = []
-
-    for (let i = 0; i < config.carCount; i++) {
-        const spawnPosition = calculateFormationPosition(
-            position,
-            i,
-            config.formation || 'single'
-        )
-
-        const car: BaseCar = {
-            id: `car-${i + 1}`,
-            position: spawnPosition,
-            rotation,
-            color: config.colors[i % config.colors.length] || '#ff0000',
-            trackId: config.trackId,
-        }
-
-        cars.push(car)
-    }
-
-    return cars
+const calculateGridPosition = (
+    basePosition: [number, number, number],
+    index: number
+): [number, number, number] => {
+    const gridSize = Math.ceil(Math.sqrt(index + 1))
+    const row = Math.floor(index / gridSize)
+    const col = index % gridSize
+    
+    return [
+        basePosition[0] + (col - gridSize / 2) * 2,
+        basePosition[1],
+        basePosition[2] - row * 3,
+    ]
 }
 
-function calculateFormationPosition(
+const calculateRandomPosition = (
+    basePosition: [number, number, number]
+): [number, number, number] => [
+    basePosition[0] + (Math.random() - 0.5) * 10,
+    basePosition[1],
+    basePosition[2] + (Math.random() - 0.5) * 5,
+]
+
+const calculateFormationPosition = (
     basePosition: [number, number, number],
     index: number,
     formation: 'single' | 'grid' | 'random'
-): [number, number, number] {
+): [number, number, number] => {
     switch (formation) {
-        case 'grid':
-            const gridSize = Math.ceil(Math.sqrt(index + 1))
-            const row = Math.floor(index / gridSize)
-            const col = index % gridSize
-            return [
-                basePosition[0] + (col - gridSize / 2) * 2,
-                basePosition[1],
-                basePosition[2] - row * 3,
-            ]
-
-        case 'random':
-            return [
-                basePosition[0] + (Math.random() - 0.5) * 10,
-                basePosition[1],
-                basePosition[2] + (Math.random() - 0.5) * 5,
-            ]
-
+        case 'grid': return calculateGridPosition(basePosition, index)
+        case 'random': return calculateRandomPosition(basePosition)
         case 'single':
-        default:
-            return basePosition
+        default: return basePosition
     }
 }
 
-export function generateCarColors(count: number): string[] {
+export const generateBaseCars = (config: SpawnConfig, track: Track): BaseCar[] => {
+    const { position, rotation } = calculateSpawnTransform(track)
+    const formation = config.formation || 'single'
+
+    return Array.from({ length: config.carCount }, (_, i) => ({
+        id: `car-${i + 1}`,
+        position: calculateFormationPosition(position, i, formation),
+        rotation,
+        color: config.colors[i % config.colors.length] || '#ff0000',
+        trackId: config.trackId,
+    }))
+}
+
+export const generateCarColors = (count: number): string[] => {
     const baseColors = [
-        '#ff0000',
-        '#00ff00',
-        '#0000ff',
-        '#ffff00',
-        '#ff00ff',
-        '#00ffff',
-        '#ffa500',
-        '#800080',
-        '#008000',
-        '#000080',
+        '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff',
+        '#00ffff', '#ffa500', '#800080', '#008000', '#000080',
     ]
 
-    const colors: string[] = []
-    for (let i = 0; i < count; i++) {
-        colors.push(baseColors[i % baseColors.length])
-    }
-
-    return colors
-}
-
-export function validateSpawnConfig(config: SpawnConfig): boolean {
-    return (
-        config.carCount > 0 &&
-        config.trackId.length > 0 &&
-        config.colors.length > 0
+    return Array.from({ length: count }, (_, i) => 
+        baseColors[i % baseColors.length]
     )
 }
+
+export const validateSpawnConfig = (config: SpawnConfig): boolean =>
+    config.carCount > 0 && 
+    config.trackId.length > 0 && 
+    config.colors.length > 0
