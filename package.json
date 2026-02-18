@@ -1,59 +1,31 @@
 {
-    "name": "frontend",
-    "private": true,
-    "version": "0.0.0",
-    "type": "module",
-    "scripts": {
-        "dev": "vite",
-        "build": "tsc -b && vite build",
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
-        "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
-        "format:check": "prettier --check \"src/**/*.{ts,tsx,css,md}\"",
-        "type-check": "tsc --noEmit",
-        "preview": "vite preview"
-    },
-    "dependencies": {
-        "@hookform/resolvers": "^5.2.0",
-        "@react-three/cannon": "^6.6.0",
-        "@react-three/drei": "^9.56.14",
-        "@react-three/fiber": "^8.15.12",
-        "@react-three/rapier": "^1.4.0",
-        "@tailwindcss/postcss": "^4.1.11",
-        "@tailwindcss/vite": "^4.1.11",
-        "axios": "^1.11.0",
-        "class-variance-authority": "^0.7.1",
-        "clsx": "^2.1.1",
-        "formik": "^2.4.6",
-        "js-cookie": "^3.0.5",
-        "neataptic": "^1.4.7",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
-        "react-hook-form": "^7.61.1",
-        "react-icons": "^5.5.0",
-        "react-router-dom": "^7.7.1",
-        "socket.io-client": "^4.8.1",
-        "tailwind-merge": "^3.3.1",
-        "three": "^0.158.0",
-        "zod": "^4.0.10"
-    },
-    "devDependencies": {
-        "@eslint/js": "^9.30.1",
-        "@types/js-cookie": "^3.0.6",
-        "@types/react": "^18.2.0",
-        "@types/react-dom": "^18.2.0",
-        "@types/three": "^0.178.1",
-        "@vitejs/plugin-react-swc": "^3.10.2",
-        "autoprefixer": "^10.4.21",
-        "eslint": "^9.30.1",
-        "eslint-plugin-react-hooks": "^5.2.0",
-        "eslint-plugin-react-refresh": "^0.4.20",
-        "globals": "^16.3.0",
-        "postcss": "^8.5.6",
-        "prettier": "^3.6.2",
-        "tailwindcss": "^4.1.11",
-        "typescript": "~5.8.3",
-        "typescript-eslint": "^8.35.1",
-        "vite": "^7.0.4"
-    }
+  "name": "racing-cars",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.48.0",
+    "vite": "^7.3.1"
+  }
 }
